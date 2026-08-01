@@ -33,6 +33,7 @@ jobs:
       - name: Write and compose expanded edition
         run: |
           for script in \
+            tools/patch_finalizer_for_actions.py \
             tools/write_social_reports.py \
             tools/write_other_reports_a.py \
             tools/write_other_reports_b.py \
