@@ -29,6 +29,16 @@ jobs:
           cat .ops/daily-v2.part1 .ops/daily-v2.part2 .ops/daily-v2.part3 .ops/daily-v2.part4 | base64 -d > /tmp/daily-v2.tgz
           echo '8577491da8007f056770ca11904ab719afaa7dc16bfd2caa9f5aeff0fa63ac2e  /tmp/daily-v2.tgz' | sha256sum -c -
           tar -xzf /tmp/daily-v2.tgz
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('tools/edition.py')
+          text = path.read_text(encoding='utf-8')
+          old = '"zh": {"core": 700, "social": 400, "other": 220}'
+          new = '"zh": {"core": 600, "social": 400, "other": 220}'
+          if old not in text:
+              raise SystemExit('legacy prose threshold marker not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
           rm -f .ops/daily-v2.part1 .ops/daily-v2.part2 .ops/daily-v2.part3 .ops/daily-v2.part4
           rmdir .ops 2>/dev/null || true
           rm -f .github/workflows/apply-daily-v2-bundle.yml
