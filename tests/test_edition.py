@@ -6,7 +6,9 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 
 from edition import (
-    EXPECTED_COUNTS,
+    LEGACY_EXPECTED_COUNTS,
+    SECTION_COUNT_RANGES,
+    EditionError,
     collect_posts,
     latest_edition_date,
     parse_changed_edition_dates,
@@ -47,6 +49,7 @@ publication_target: wordpress
 {prefix}title: {title}
 date: '{date} 06:00:00 +0900'
 news_date: '{date}'
+edition_date: '{date}'
 daily_section: {section}
 slug: {slug}
 excerpt: {excerpt}
@@ -81,6 +84,15 @@ wordpress:
     )
 
 
+def write_bilingual_fixture(root: Path, *, date: str, counts: dict[str, int]) -> None:
+    importance = {'core': 1, 'social': 101, 'other': 201}
+    for section, count in counts.items():
+        for index in range(count):
+            slug = f'{section}-{index + 1}'
+            write_post(root / '_posts' / f'{date}-{slug}.md', date=date, slug=slug, section=section, importance=importance[section] + index, lang='zh')
+            write_post(root / 'japanese' / 'posts' / f'{date}-{slug}.md', date=date, slug=slug, section=section, importance=importance[section] + index, lang='ja')
+
+
 class EditionLibraryTests(unittest.TestCase):
     def test_latest_edition_date_uses_manifest_filename(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -108,16 +120,11 @@ class EditionLibraryTests(unittest.TestCase):
             )
             self.assertEqual(dates, ['2026-08-02', '2026-08-03'])
 
-    def test_japanese_daily_contains_all_article_links(self):
+    def test_japanese_daily_contains_actual_number_of_links(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            posts = []
-            importance = {'core': 1, 'social': 101, 'other': 201}
-            for section, count in EXPECTED_COUNTS.items():
-                for index in range(count):
-                    slug = f'{section}-{index + 1}'
-                    path = root / 'japanese' / 'posts' / f'2026-08-02-{slug}.md'
-                    write_post(path, date='2026-08-02', slug=slug, section=section, importance=importance[section] + index, lang='ja')
+            counts = {'core': 7, 'social': 10, 'other': 13}
+            write_bilingual_fixture(root, date='2026-08-02', counts=counts)
             posts = collect_posts(root, 'ja', '2026-08-02')
             text = render_japanese_daily(
                 edition_date='2026-08-02',
@@ -127,19 +134,17 @@ class EditionLibraryTests(unittest.TestCase):
                 posts=posts,
                 wordpress_status='publish',
             )
-            self.assertEqual(text.count('[全文を読む →]'), 26)
+            self.assertEqual(text.count('[全文を読む →]'), 30)
+            self.assertIn('政治・経済・主要ニュース **7本**', text)
+            self.assertIn('社会を読む **10本**', text)
+            self.assertIn('そのほか **13本**', text)
             self.assertIn('https://shinkiji.com/core-1/', text)
-            self.assertIn('wordpress:\n  status: publish', text)
 
-    def test_generated_edition_validates_as_one_dynamic_date(self):
+    def test_generated_flexible_edition_records_actual_counts(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            importance = {'core': 1, 'social': 101, 'other': 201}
-            for section, count in EXPECTED_COUNTS.items():
-                for index in range(count):
-                    slug = f'{section}-{index + 1}'
-                    write_post(root / '_posts' / f'2026-08-02-{slug}.md', date='2026-08-02', slug=slug, section=section, importance=importance[section] + index, lang='zh')
-                    write_post(root / 'japanese' / 'posts' / f'2026-08-02-{slug}.md', date='2026-08-02', slug=slug, section=section, importance=importance[section] + index, lang='ja')
+            counts = {'core': 7, 'social': 10, 'other': 13}
+            write_bilingual_fixture(root, date='2026-08-02', counts=counts)
             write_generated_edition(
                 root=root,
                 edition_date='2026-08-02',
@@ -149,9 +154,33 @@ class EditionLibraryTests(unittest.TestCase):
                 wordpress_status='publish',
             )
             report = validate_edition(root, '2026-08-02')
-            self.assertEqual(report['chinese_posts'], 26)
-            self.assertEqual(report['japanese_posts'], 26)
+            self.assertEqual(report['schema_version'], 3)
+            self.assertEqual(report['counts'], counts)
+            self.assertEqual(report['chinese_posts'], 30)
+            self.assertEqual(report['japanese_posts'], 30)
             self.assertEqual(report['wordpress_default_status'], 'publish')
+            manifest = (root / 'japanese' / 'edition-2026-08-02.yml').read_text(encoding='utf-8')
+            self.assertIn('core: 7', manifest)
+            self.assertIn('social: 10', manifest)
+            self.assertIn('other: 13', manifest)
+
+    def test_generation_rejects_section_below_range(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_bilingual_fixture(root, date='2026-08-02', counts={'core': 5, 'social': 10, 'other': 13})
+            with self.assertRaisesRegex(EditionError, 'core must contain 6-8 posts'):
+                write_generated_edition(
+                    root=root,
+                    edition_date='2026-08-02',
+                    coverage_start='2026-08-01T06:00:00+09:00',
+                    coverage_end='2026-08-02T05:59:59+09:00',
+                    published_at='2026-08-02 06:00:00 +0900',
+                    wordpress_status='publish',
+                )
+
+    def test_legacy_counts_remain_fixed(self):
+        self.assertEqual(LEGACY_EXPECTED_COUNTS, {'core': 8, 'social': 8, 'other': 10})
+        self.assertEqual(SECTION_COUNT_RANGES, {'core': (6, 8), 'social': (8, 12), 'other': (10, 15)})
 
 
 if __name__ == '__main__':
