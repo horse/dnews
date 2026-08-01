@@ -17,11 +17,13 @@ for page in "$homepage" "$daily_page" "$tag_page" "$article_page"; do
   }
 done
 
+grep -q 'href="/dnews/tags/"' "$homepage"
 grep -q 'class="tag-pill"' "$homepage"
 grep -q 'class="tag-pill"' "$daily_page"
 grep -q '相关标签' "$article_page"
 grep -q 'class="tag-pill"' "$article_page"
 grep -q '日本气象厅' "$article_page"
+grep -q '标签收录新闻正文中出现的' "$tag_page"
 grep -q '熊本县' "$tag_page"
 grep -q 'kumamoto-earthquake-supply-chain' "$tag_page"
 
