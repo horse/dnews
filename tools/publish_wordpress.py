@@ -10,6 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from edition import collect_posts, latest_edition_date, parse_markdown as parse_edition_markdown
+
 
 def normalize_password(value: str) -> str:
     return re.sub(r"\s+", "", value or "")
@@ -32,7 +34,11 @@ def exact_term_id(terms: list[dict[str, Any]], name: str) -> int | None:
 
 
 def index_terms(terms: list[dict[str, Any]]) -> dict[str, int]:
-    return {str(term.get("name", "")): int(term["id"]) for term in terms if term.get("id") is not None}
+    return {
+        str(term.get("name", "")): int(term["id"])
+        for term in terms
+        if term.get("id") is not None
+    }
 
 
 def is_retryable_status(status_code: int) -> bool:
@@ -66,7 +72,7 @@ def make_post_payload(
         "content": html,
         "excerpt": data.get("excerpt", ""),
         "slug": data["slug"],
-        "status": status_override or wp.get("status", "draft"),
+        "status": status_override or wp.get("status", "publish"),
         "comment_status": wp.get("comment_status", "closed"),
         "categories": category_ids,
         "tags": tag_ids,
@@ -86,33 +92,36 @@ def post_lookup_action(posts: list[dict[str, Any]]) -> tuple[str, int | None]:
 
 
 def parse_markdown(path: Path) -> tuple[dict[str, Any], str]:
-    import yaml
-
-    text = path.read_text(encoding="utf-8")
-    parts = re.split(r"^---\s*$", text, maxsplit=2, flags=re.MULTILINE)
-    if len(parts) != 3:
-        raise ValueError(f"Invalid front matter: {path}")
-    data = yaml.safe_load(parts[1])
-    if not isinstance(data, dict):
-        raise ValueError(f"Invalid YAML mapping: {path}")
-    return data, parts[2].strip()
+    post = parse_edition_markdown(path)
+    return post.data, post.body
 
 
 def markdown_to_html(body: str) -> str:
     import markdown
 
-    return markdown.markdown(body, extensions=["extra", "sane_lists"], output_format="html5")
+    return markdown.markdown(
+        body,
+        extensions=["extra", "sane_lists"],
+        output_format="html5",
+    )
 
 
 class WordPressClient:
-    def __init__(self, base_url: str, username: str, password: str, timeout: int = 45, max_attempts: int = 6):
+    def __init__(
+        self,
+        base_url: str,
+        username: str,
+        password: str,
+        timeout: int = 45,
+        max_attempts: int = 6,
+    ):
         import requests
 
         self.base_url = base_url.rstrip("/")
         self.api = f"{self.base_url}/wp-json/wp/v2"
         self.session = requests.Session()
         self.session.auth = (username, normalize_password(password))
-        self.session.headers.update({"User-Agent": "dnews-wordpress-publisher/1.0"})
+        self.session.headers.update({"User-Agent": "dnews-wordpress-publisher/2.0"})
         self.timeout = timeout
         self.max_attempts = max_attempts
         self.term_cache: dict[str, dict[str, int]] = {}
@@ -141,9 +150,15 @@ class WordPressClient:
                 if attempt >= self.max_attempts:
                     break
                 time.sleep(min(2 ** (attempt - 1), 16))
-        raise RuntimeError(f"WordPress request failed after {self.max_attempts} attempts: {last_error}")
+        raise RuntimeError(
+            f"WordPress request failed after {self.max_attempts} attempts: {last_error}"
+        )
 
-    def fetch_all(self, endpoint: str, params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    def fetch_all(
+        self,
+        endpoint: str,
+        params: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
         page = 1
         while True:
@@ -184,14 +199,22 @@ class WordPressClient:
 
     def load_posts(self) -> dict[str, list[dict[str, Any]]]:
         if self.post_cache is None:
-            posts = self.fetch_all(f"{self.api}/posts", {"status": "any", "context": "edit"})
+            posts = self.fetch_all(
+                f"{self.api}/posts",
+                {"status": "any", "context": "edit"},
+            )
             cache: dict[str, list[dict[str, Any]]] = {}
             for post in posts:
                 cache.setdefault(str(post.get("slug", "")), []).append(post)
             self.post_cache = cache
         return self.post_cache
 
-    def upsert(self, data: dict[str, Any], html: str, status_override: str | None = None) -> dict[str, Any]:
+    def upsert(
+        self,
+        data: dict[str, Any],
+        html: str,
+        status_override: str | None = None,
+    ) -> dict[str, Any]:
         wp = data.get("wordpress") or {}
         category_names = list(wp.get("categories") or data.get("categories") or [])
         tag_names = list(wp.get("tags") or data.get("tags") or [])
@@ -201,9 +224,13 @@ class WordPressClient:
         post_cache = self.load_posts()
         slug = str(data["slug"])
         action, post_id = post_lookup_action(post_cache.get(slug, []))
-        if status_override == "publish" and action == "create":
-            raise RuntimeError(f"Refusing to publish a missing WordPress post: {slug}")
-        payload = make_post_payload(data, html, category_ids, tag_ids, status_override=status_override)
+        payload = make_post_payload(
+            data,
+            html,
+            category_ids,
+            tag_ids,
+            status_override=status_override,
+        )
         if action == "create":
             result = self.request("POST", f"{self.api}/posts", json=payload)
         else:
@@ -220,21 +247,35 @@ class WordPressClient:
         }
 
 
-def select_paths(root: Path, mode: str, slug: str | None) -> list[Path]:
-    posts = sorted((root / "japanese" / "posts").glob("*.md"))
+def select_paths(
+    root: Path,
+    mode: str,
+    slug: str | None,
+    *,
+    edition_date: str | None = None,
+) -> list[Path]:
+    date = edition_date or latest_edition_date(root)
+    posts = [post.path for post in collect_posts(root, "ja", date)]
+    daily = root / "japanese" / "daily" / f"{date}.md"
     if mode == "one":
         if not slug:
             raise ValueError("slug is required for mode=one")
-        matched = [p for p in posts if parse_markdown(p)[0].get("slug") == slug]
+        matched = [path for path in posts if parse_markdown(path)[0].get("slug") == slug]
         if len(matched) != 1:
-            raise ValueError(f"Expected exactly one article for slug={slug}, got {len(matched)}")
+            raise ValueError(
+                f"Expected exactly one article for edition={date} slug={slug}, got {len(matched)}"
+            )
         return matched
     if mode == "posts":
         return posts
     if mode == "daily":
-        return [root / "japanese" / "daily" / "2026-07-31.md"]
+        if not daily.exists():
+            raise ValueError(f"Missing Japanese daily file: {daily}")
+        return [daily]
     if mode == "all":
-        return posts + [root / "japanese" / "daily" / "2026-07-31.md"]
+        if not daily.exists():
+            raise ValueError(f"Missing Japanese daily file: {daily}")
+        return posts + [daily]
     raise ValueError(f"Unsupported mode: {mode}")
 
 
@@ -254,15 +295,27 @@ def main() -> int:
     root = Path(args.root).resolve()
     report_path = Path(args.report)
     request_data = yaml.safe_load(Path(args.request).read_text(encoding="utf-8")) or {}
-    mode = str(request_data.get("mode", "one"))
+    mode = str(request_data.get("mode", "all"))
     slug = request_data.get("slug")
-    status_override = normalize_status_override(request_data.get("status_override"))
+    edition_date = request_data.get("edition_date") or latest_edition_date(root)
+    status_override = normalize_status_override(
+        request_data.get("status_override", request_data.get("status", "publish"))
+    )
 
-    client = WordPressClient(os.environ["WP_BASE_URL"], os.environ["WP_USERNAME"], os.environ["WP_APP_PASSWORD"])
+    client = WordPressClient(
+        os.environ["WP_BASE_URL"],
+        os.environ["WP_USERNAME"],
+        os.environ["WP_APP_PASSWORD"],
+    )
     user = client.verify()
     report: dict[str, Any] = {
         "site": client.base_url,
-        "authenticated_user": {"id": user.get("id"), "name": user.get("name"), "slug": user.get("slug")},
+        "authenticated_user": {
+            "id": user.get("id"),
+            "name": user.get("name"),
+            "slug": user.get("slug"),
+        },
+        "edition_date": str(edition_date),
         "mode": mode,
         "status_override": status_override,
         "count": 0,
@@ -270,25 +323,32 @@ def main() -> int:
     }
     write_report(report_path, report)
 
-    try:
-        for index, path in enumerate(select_paths(root, mode, slug), start=1):
-            data, body = parse_markdown(path)
-            if data.get("publication_target") != "wordpress":
-                raise ValueError(f"Not a WordPress target: {path}")
-            if (data.get("wordpress") or {}).get("status") != "draft":
-                raise ValueError(f"Source Markdown must retain draft status: {path}")
-            result = client.upsert(data, markdown_to_html(body), status_override=status_override)
-            result["path"] = str(path.relative_to(root))
-            report["results"].append(result)
-            report["count"] = len(report["results"])
-            write_report(report_path, report)
-            print(json.dumps({"progress": index, "result": result}, ensure_ascii=False), flush=True)
-    except Exception as exc:
-        report["error"] = f"{type(exc).__name__}: {exc}"
+    for path in select_paths(
+        root,
+        mode,
+        slug,
+        edition_date=str(edition_date),
+    ):
+        data, body = parse_markdown(path)
+        if data.get("publication_target") != "wordpress":
+            raise ValueError(f"Not a WordPress target: {path}")
+        result = client.upsert(
+            data,
+            markdown_to_html(body),
+            status_override=status_override,
+        )
+        result["path"] = str(path.relative_to(root))
+        report["results"].append(result)
+        report["count"] = len(report["results"])
         write_report(report_path, report)
-        raise
+        print(json.dumps(result, ensure_ascii=False))
 
-    print(json.dumps(report, ensure_ascii=False), flush=True)
+    if status_override:
+        mismatches = [
+            item for item in report["results"] if item.get("status") != status_override
+        ]
+        if mismatches:
+            raise RuntimeError(f"WordPress status mismatch: {mismatches}")
     return 0
 
 

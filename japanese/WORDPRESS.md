@@ -1,25 +1,28 @@
 # WordPress公開契約
 
-日本語記事は `japanese/posts/*.md` を正本とする。同期ツールはfront matterを読み、Markdown本文をHTMLへ変換してWordPress REST APIへ送る。
+日本語記事の正本は `japanese/posts/*.md`、日次総覧の正本は `japanese/daily/*.md` とする。
 
 ## 標準動作
 
-1. `slug` で既存記事を検索する。
-2. 該当記事がなければ、API上で投稿を作成する。
-3. 標準の最終状態は `publish` とする。
-4. 1件あれば同じ投稿を更新し、重複投稿を作らない。
-5. 複数件あれば処理を停止する。
-6. カテゴリーとタグは名前で検索し、存在しなければ作成する。
-7. 認証情報はGitHub Actions Secretsから読み、リポジトリへ保存しない。
+1. 版次manifestから対象日を特定する。
+2. その版次の26記事と日次総覧1件だけを選ぶ。
+3. MarkdownをHTMLへ変換する。
+4. カテゴリーとタグを名前で再利用し、存在しない場合だけ作成する。
+5. slugで既存投稿を検索する。
+6. 0件なら作成、1件なら更新、複数件なら停止する。
+7. 最終状態は標準で `publish`。手動実行時だけ `draft` を選択できる。
+8. 公開後に全URLを未ログイン状態で確認する。
 
-手動実行時に `draft` を明示した場合だけ、最終状態を下書きにする。
+## 自動実行
+
+`.github/workflows/publish-japanese-wordpress.yml` は `main` に入った変更から版次日を抽出し、その版次だけを同期する。過去の全記事を毎回再送しない。
 
 ## 認証
 
-WordPressの専用投稿ユーザーとApplication Passwordを使う。必要な環境変数は次の3つ。
+```text
+WP_BASE_URL=https://shinkiji.com
+WP_USERNAME=shinkiji
+WP_APP_PASSWORD=${{ secrets.shinkiji }}
+```
 
-- `WP_BASE_URL`
-- `WP_USERNAME`
-- `WP_APP_PASSWORD`
-
-現在の正式ワークフローでは、サイトURLとユーザー名をコード側に設定し、Application PasswordだけをGitHub Actions Secret `shinkiji` から読み込む。
+Application PasswordはGitHub Actions Secretにのみ保存し、リポジトリ、レポート、ログへ書き込まない。
