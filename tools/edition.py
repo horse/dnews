@@ -9,7 +9,13 @@ from typing import Any, Iterable
 
 import yaml
 
-EXPECTED_COUNTS: dict[str, int] = {"core": 8, "social": 8, "other": 10}
+LEGACY_EXPECTED_COUNTS: dict[str, int] = {"core": 8, "social": 8, "other": 10}
+EXPECTED_COUNTS = LEGACY_EXPECTED_COUNTS  # Backward-compatible import.
+SECTION_COUNT_RANGES: dict[str, tuple[int, int]] = {
+    "core": (6, 8),
+    "social": (8, 12),
+    "other": (10, 15),
+}
 SECTION_ORDER = ("core", "social", "other")
 SECTION_TITLES_JA = {
     "core": "政治・経済・主要ニュース",
@@ -17,10 +23,16 @@ SECTION_TITLES_JA = {
     "other": "科学・文化・都市、そのほか",
 }
 SECTION_DESCRIPTIONS_JA = {
-    "core": "全国的な政策、経済、安全保障、統計、重大災害を扱う8本。",
-    "social": "公共サービス、家族、労働、医療、教育、地方行政、生活条件から日本社会を読む8本。",
-    "other": "科学、文化、教育、都市、スポーツ、映画、出版、地域社会を記録する10本。",
+    "core": "全国的な政策、経済、安全保障、統計、重大災害と公共リスクを扱う。",
+    "social": "公共サービス、家族、労働、医療、教育、地方行政と生活条件から日本社会を読む。",
+    "other": "科学、文化、教育、都市、スポーツ、映画、出版と地域社会を記録する。",
 }
+CANDIDATE_SOURCES_ZH = (
+    "Yahoo!ニュース主要页面、Google News日本头条、NHK NEWS WEB、朝日、读卖、每日、日经、产经、共同社、时事通信和NHK"
+)
+CANDIDATE_SOURCES_JA = (
+    "Yahoo!ニュース主要面、Google News日本トップ、NHK NEWS WEB、朝日、読売、毎日、日経、産経、共同通信、時事通信、NHK"
+)
 MANIFEST_RE = re.compile(r"^japanese/edition-(\d{4}-\d{2}-\d{2})\.ya?ml$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -103,7 +115,7 @@ def parse_changed_edition_dates(root: Path, changed_paths: Iterable[str]) -> lis
         path = root / rel
         if path.suffix.lower() not in {".md", ".markdown", ".yml", ".yaml"} or not path.exists():
             continue
-        if rel.startswith("japanese/posts/") or rel.startswith("japanese/daily/") or rel.startswith("_posts/") or rel.startswith("daily/"):
+        if rel.startswith(("japanese/posts/", "japanese/daily/", "_posts/", "daily/")):
             try:
                 post = parse_markdown(path)
             except EditionError:
@@ -127,13 +139,39 @@ def git_changed_paths(root: Path, base: str, head: str) -> list[str]:
 
 def _yaml_list(values: Iterable[str], indent: int = 0) -> str:
     prefix = " " * indent
+
     def scalar(value: str) -> str:
         return yaml.safe_dump(value, allow_unicode=True, default_flow_style=True).splitlines()[0]
+
     return "\n".join(f"{prefix}- {scalar(value)}" for value in values)
 
 
-def _quoted(value: str) -> str:
-    return yaml.safe_dump(value, allow_unicode=True, default_flow_style=True).strip()
+def section_counts(posts: Iterable[MarkdownPost]) -> dict[str, int]:
+    counter = Counter(str(post.data.get("daily_section", "")) for post in posts)
+    return {section: counter.get(section, 0) for section in SECTION_ORDER}
+
+
+def validate_flexible_counts(counts: dict[str, int]) -> None:
+    normalized = {section: int(counts.get(section, 0)) for section in SECTION_ORDER}
+    extra = set(counts) - set(SECTION_ORDER)
+    if extra:
+        raise EditionError(f"Unsupported sections: {sorted(extra)}")
+    for section in SECTION_ORDER:
+        minimum, maximum = SECTION_COUNT_RANGES[section]
+        value = normalized[section]
+        if not minimum <= value <= maximum:
+            raise EditionError(f"{section} must contain {minimum}-{maximum} posts, got {value}")
+    total = sum(normalized.values())
+    if not 24 <= total <= 35:
+        raise EditionError(f"edition must contain 24-35 posts, got {total}")
+
+
+def _count_summary_zh(counts: dict[str, int]) -> str:
+    return f"{counts['core']}篇政治经济与重大事件、{counts['social']}篇社会观察、{counts['other']}篇科学文化城市及其他新闻"
+
+
+def _count_summary_ja(counts: dict[str, int]) -> str:
+    return f"政治・経済{counts['core']}本、社会{counts['social']}本、科学・文化・都市など{counts['other']}本"
 
 
 def render_chinese_daily(
@@ -142,7 +180,11 @@ def render_chinese_daily(
     coverage_start: str,
     coverage_end: str,
     published_at: str,
+    counts: dict[str, int] | None = None,
 ) -> str:
+    counts = dict(counts or LEGACY_EXPECTED_COUNTS)
+    total = sum(counts.values())
+    summary = _count_summary_zh(counts)
     return f'''---
 layout: page
 title: "日本新闻早报｜{edition_date}"
@@ -153,20 +195,20 @@ edition_type: morning
 coverage_start: '{coverage_start}'
 coverage_end: '{coverage_end}'
 permalink: /daily/{edition_date}/
-description: "截至日本时间{coverage_end[11:16]}，过去24小时内26篇日本新闻：8篇政治经济与重大事件、8篇社会观察、10篇科学文化城市及其他新闻。"
-seo_title: "{edition_date}日本新闻早报｜26篇双语独立报道"
-meta_description: "截至日本时间{coverage_end[11:16]}的日本新闻早报，共26篇：8篇政治经济与重大事件、8篇社会观察、10篇科学文化城市及其他新闻。"
+description: "截至日本时间{coverage_end[11:16]}，过去24小时内{total}篇日本新闻：{summary}。"
+seo_title: "{edition_date}日本新闻早报｜{total}篇双语独立报道"
+meta_description: "截至日本时间{coverage_end[11:16]}的日本新闻早报，共{total}篇：{summary}。"
 ---
 
-<div class="daily-meta">Morning edition · {edition_date} JST · 26 reports</div>
+<div class="daily-meta">Morning edition · {edition_date} JST · {total} reports</div>
 
-本期收录截至日本时间 **{coverage_end[11:16]}** 的过去24小时日本新闻，共26篇独立报道。候选只来自可信新闻媒体和权威机构正式发布，不以社交媒体热度、搜索趋势或点击排行榜作为入选依据。
+本期收录截至日本时间 **{coverage_end[11:16]}** 的过去24小时日本新闻，共{total}篇独立报道。候选条目来自 **{CANDIDATE_SOURCES_ZH}**。Yahoo!ニュース和Google News用于发现，写作时回到原媒体、正式资料和可信独立报道核验。
 
 <div class="daily-summary">
-<strong>选题结构：</strong>8篇政治经济与重大事件、8篇社会观察、10篇科学文化城市与其他新闻。每篇文章均重新检索官方资料和可信独立报道后写作。
+<strong>选题结构：</strong>{summary}。页面位置与多家独立媒体重复报道是主要信号，再结合公共影响、制度意义、新事实强度、后果持续性、来源可靠性、独立确认和紧急性决定入选。
 </div>
 
-{{% assign all_daily_posts = site.posts | where: "news_date", page.news_date %}}
+{{% assign all_daily_posts = site.posts | where: "edition_date", page.edition_date %}}
 {{% assign core_posts = all_daily_posts | where: "daily_section", "core" | sort: "importance" %}}
 {{% assign social_posts = all_daily_posts | where: "daily_section", "social" | sort: "importance" %}}
 {{% assign other_posts = all_daily_posts | where: "daily_section", "other" | sort: "importance" %}}
@@ -226,7 +268,7 @@ meta_description: "截至日本时间{coverage_end[11:16]}的日本新闻早报�
 
 ## 编辑说明
 
-本期按事件聚类，通讯社转载和重复报道只计算一次。重要性依据公共影响、制度意义、后果持续性、新事实强度、来源可靠性和独立确认判断，不按照网络热度排序。
+三类稿件采用同等的检索、核验和编辑标准。政治经济稿突出决定、数字、制度和后果；社会观察稿从当天新事实解释公共服务和社会生活；其他稿可增加现场、知识或文化背景，但仍须是完整新闻，不得写成预告、宣传稿或简单摘要。
 '''
 
 
@@ -240,9 +282,9 @@ def render_japanese_daily(
     wordpress_status: str,
     site_url: str = "https://shinkiji.com",
 ) -> str:
-    counts = Counter(str(post.data.get("daily_section")) for post in posts)
-    if counts != Counter(EXPECTED_COUNTS):
-        raise EditionError(f"Japanese daily requires {EXPECTED_COUNTS}, got {dict(counts)}")
+    counts = section_counts(posts)
+    validate_flexible_counts(counts)
+    total = sum(counts.values())
     tags = [
         edition_date.replace("-", "年", 1).replace("-", "月", 1) + "日",
         "日本ニュース",
@@ -257,6 +299,7 @@ def render_japanese_daily(
         "労働",
         "地域",
     ]
+    summary = _count_summary_ja(counts)
     lines = [
         "---",
         f"story_id: {edition_date}-japan-daily",
@@ -272,15 +315,15 @@ def render_japanese_daily(
         f"coverage_start: '{coverage_start}'",
         f"coverage_end: '{coverage_end}'",
         f"slug: japan-daily-{edition_date}",
-        f"excerpt: {edition_date}の日本ニュース朝刊。政治・経済8本、社会8本、科学・文化・都市など10本の計26本を収録し、各見出しから独立記事を読める。",
+        f"excerpt: {edition_date}の日本ニュース朝刊。{summary}の計{total}本を収録し、各見出しから独立記事を読める。",
         "categories:",
         "- 日本",
         "- ニュース",
         "- デイリー",
         "tags:",
         *_yaml_list(tags).splitlines(),
-        f"seo_title: 日本ニュース朝刊｜{edition_date}・全26本",
-        f"meta_description: {edition_date}の日本を、政治・経済8本、社会8本、科学・文化・都市など10本の計26本で伝える朝刊。",
+        f"seo_title: 日本ニュース朝刊｜{edition_date}・全{total}本",
+        f"meta_description: {edition_date}の日本を、{summary}の計{total}本で伝える朝刊。",
         f"source_checked_at: '{coverage_end}'",
         "wordpress:",
         f"  status: {wordpress_status}",
@@ -294,21 +337,31 @@ def render_japanese_daily(
         *_yaml_list(tags, indent=2).splitlines(),
         "---",
         "",
-        f"日本時間の **{coverage_end[11:16]}** までに確認された過去24時間の日本ニュースを、26本の独立記事としてまとめた。候補は信頼できる報道機関と公的機関の正式発表に限定し、SNSの話題量や検索トレンドは選定基準にしていない。",
+        f"日本時間の **{coverage_end[11:16]}** までに確認された過去24時間の日本ニュースを、{total}本の独立記事としてまとめた。候補は **{CANDIDATE_SOURCES_JA}** から取得し、Yahoo!ニュースとGoogle Newsは発見に用い、執筆時には原報道、公式資料、信頼できる独立報道を確認した。",
         "",
-        "> **全26本**｜政治・経済・主要ニュース **8本**｜社会を読む **8本**｜科学・文化・都市、そのほか **10本**  ",
+        f"> **全{total}本**｜政治・経済・主要ニュース **{counts['core']}本**｜社会を読む **{counts['social']}本**｜科学・文化・都市、そのほか **{counts['other']}本**  ",
         "> 見出し、または「全文を読む」をクリックすると独立記事へ移動します。",
         "",
         "## 目次",
         "",
-        "- [政治・経済・主要ニュース（8本）](#politics-economy)",
-        "- [社会を読む（8本）](#society)",
-        "- [科学・文化・都市、そのほか（10本）](#science-culture-city)",
+        f"- [政治・経済・主要ニュース（{counts['core']}本）](#politics-economy)",
+        f"- [社会を読む（{counts['social']}本）](#society)",
+        f"- [科学・文化・都市、そのほか（{counts['other']}本）](#science-culture-city)",
     ]
     anchors = {"core": "politics-economy", "social": "society", "other": "science-culture-city"}
     number = 1
     for section in SECTION_ORDER:
-        lines.extend(["", "---", "", f'<a id="{anchors[section]}"></a>', "", f"## {SECTION_TITLES_JA[section]}", "", SECTION_DESCRIPTIONS_JA[section], ""])
+        lines.extend([
+            "",
+            "---",
+            "",
+            f'<a id="{anchors[section]}"></a>',
+            "",
+            f"## {SECTION_TITLES_JA[section]}",
+            "",
+            SECTION_DESCRIPTIONS_JA[section],
+            "",
+        ])
         section_posts = [post for post in posts if post.data.get("daily_section") == section]
         section_posts.sort(key=lambda item: int(item.data.get("importance", 999999)))
         for post in section_posts:
@@ -330,10 +383,11 @@ def render_japanese_daily(
         "",
         "## 編集方針",
         "",
-        "同一通信社記事の転載は重複としてまとめ、公共への影響、制度的意味、結果の持続性、新事実の強さ、情報源の信頼性、独立確認の有無によって選定した。SNSの話題量、検索順位、閲覧数は選定基準にしていない。",
+        "ページ上の位置と複数の独立媒体による反復報道を主要な手掛かりとし、公共への影響、制度的意味、新事実の強さ、結果の持続性、情報源の信頼性、独立確認、緊急性を合わせて選定した。三分類とも調査、確認、編集に同じ労力をかけ、書き方だけを題材に応じて変えている。",
         "",
     ])
     return "\n".join(lines)
+
 
 COMMON_REQUIRED_FIELDS = (
     "title",
@@ -384,11 +438,6 @@ def load_manifest(root: Path, edition_date: str) -> dict[str, Any]:
     return data
 
 
-def section_counts(posts: Iterable[MarkdownPost]) -> dict[str, int]:
-    counter = Counter(str(post.data.get("daily_section", "")) for post in posts)
-    return {section: counter.get(section, 0) for section in SECTION_ORDER}
-
-
 def _post_errors(
     post: MarkdownPost,
     *,
@@ -409,7 +458,7 @@ def _post_errors(
     if normalized_date(data.get("edition_date", data.get("news_date"))) != edition_date:
         errors.append(f"{post.path}: edition/news date must be {edition_date}")
     section = str(data.get("daily_section", ""))
-    if section not in EXPECTED_COUNTS:
+    if section not in SECTION_ORDER:
         errors.append(f"{post.path}: invalid daily_section {section!r}")
     slug = str(data.get("slug", ""))
     if not slug or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug):
@@ -478,35 +527,54 @@ def _post_errors(
     return errors
 
 
+def _manifest_count_ranges() -> dict[str, dict[str, int]]:
+    return {
+        section: {"min": limits[0], "max": limits[1]}
+        for section, limits in SECTION_COUNT_RANGES.items()
+    }
+
+
 def validate_edition(root: Path, edition_date: str) -> dict[str, Any]:
     manifest = load_manifest(root, edition_date)
     errors: list[str] = []
     schema_version = int(manifest.get("schema_version", 1))
     if normalized_date(manifest.get("edition")) != edition_date:
         errors.append(f"manifest edition must be {edition_date}")
+
     expected_counts = {str(k): int(v) for k, v in (manifest.get("expected_counts") or {}).items()}
-    if expected_counts != EXPECTED_COUNTS:
-        errors.append(f"manifest expected_counts must be {EXPECTED_COUNTS}, got {expected_counts}")
+    if schema_version >= 3:
+        try:
+            validate_flexible_counts(expected_counts)
+        except EditionError as exc:
+            errors.append(f"manifest expected_counts invalid: {exc}")
+        if manifest.get("count_ranges") != _manifest_count_ranges():
+            errors.append(f"manifest count_ranges must be {_manifest_count_ranges()}")
+    elif expected_counts != LEGACY_EXPECTED_COUNTS:
+        errors.append(f"legacy manifest expected_counts must be {LEGACY_EXPECTED_COUNTS}, got {expected_counts}")
+
     expected_status = manifest.get("wordpress_default_status")
     if schema_version >= 2:
         if expected_status not in {"draft", "publish"}:
-            errors.append("schema_version 2 manifest requires wordpress_default_status draft or publish")
+            errors.append("schema_version 2+ manifest requires wordpress_default_status draft or publish")
         for field in ("coverage_start", "coverage_end", "published_at", "edition_type"):
             if not manifest.get(field):
-                errors.append(f"schema_version 2 manifest missing {field}")
+                errors.append(f"schema_version 2+ manifest missing {field}")
     elif expected_status not in {None, "draft", "publish"}:
         errors.append("manifest wordpress_default_status must be draft or publish")
 
+    expected_total = sum(expected_counts.values())
     zh_posts = collect_posts(root, "zh", edition_date)
     ja_posts = collect_posts(root, "ja", edition_date)
-    if len(zh_posts) != 26:
-        errors.append(f"expected 26 Chinese posts for {edition_date}, got {len(zh_posts)}")
-    if len(ja_posts) != 26:
-        errors.append(f"expected 26 Japanese posts for {edition_date}, got {len(ja_posts)}")
-    if section_counts(zh_posts) != EXPECTED_COUNTS:
-        errors.append(f"Chinese section counts mismatch: {section_counts(zh_posts)}")
-    if section_counts(ja_posts) != EXPECTED_COUNTS:
-        errors.append(f"Japanese section counts mismatch: {section_counts(ja_posts)}")
+    zh_counts = section_counts(zh_posts)
+    ja_counts = section_counts(ja_posts)
+    if len(zh_posts) != expected_total:
+        errors.append(f"expected {expected_total} Chinese posts for {edition_date}, got {len(zh_posts)}")
+    if len(ja_posts) != expected_total:
+        errors.append(f"expected {expected_total} Japanese posts for {edition_date}, got {len(ja_posts)}")
+    if zh_counts != expected_counts:
+        errors.append(f"Chinese section counts mismatch: {zh_counts} != {expected_counts}")
+    if ja_counts != expected_counts:
+        errors.append(f"Japanese section counts mismatch: {ja_counts} != {expected_counts}")
 
     for post in zh_posts:
         errors.extend(_post_errors(post, language="zh", edition_date=edition_date, schema_version=schema_version, expected_status=expected_status))
@@ -527,8 +595,11 @@ def validate_edition(root: Path, edition_date: str) -> dict[str, Any]:
         )
 
     manifest_posts = manifest.get("posts") or []
-    if not isinstance(manifest_posts, list) or len(manifest_posts) != 26:
-        errors.append(f"manifest expected 26 posts, got {len(manifest_posts) if isinstance(manifest_posts, list) else 'non-list'}")
+    if not isinstance(manifest_posts, list) or len(manifest_posts) != expected_total:
+        errors.append(
+            f"manifest expected {expected_total} posts, got "
+            f"{len(manifest_posts) if isinstance(manifest_posts, list) else 'non-list'}"
+        )
         manifest_posts = []
     manifest_slugs: list[str] = []
     for item in manifest_posts:
@@ -604,7 +675,7 @@ def validate_edition(root: Path, edition_date: str) -> dict[str, Any]:
     return {
         "edition": edition_date,
         "schema_version": schema_version,
-        "counts": EXPECTED_COUNTS,
+        "counts": expected_counts,
         "chinese_posts": len(zh_posts),
         "japanese_posts": len(ja_posts),
         "wordpress_default_status": expected_status,
@@ -624,10 +695,12 @@ def build_manifest(
         raise EditionError(f"Unsupported WordPress status: {wordpress_status}")
     zh_posts = collect_posts(root, "zh", edition_date)
     ja_posts = collect_posts(root, "ja", edition_date)
-    if len(zh_posts) != 26 or len(ja_posts) != 26:
-        raise EditionError(f"Need 26 Chinese and 26 Japanese posts, got zh={len(zh_posts)}, ja={len(ja_posts)}")
-    if section_counts(zh_posts) != EXPECTED_COUNTS or section_counts(ja_posts) != EXPECTED_COUNTS:
-        raise EditionError(f"Section counts must be {EXPECTED_COUNTS}")
+    zh_counts = section_counts(zh_posts)
+    ja_counts = section_counts(ja_posts)
+    validate_flexible_counts(zh_counts)
+    validate_flexible_counts(ja_counts)
+    if zh_counts != ja_counts:
+        raise EditionError(f"Chinese/Japanese section counts differ: zh={zh_counts}, ja={ja_counts}")
     zh_slugs = {str(post.data.get("slug")) for post in zh_posts}
     ja_slugs = {str(post.data.get("slug")) for post in ja_posts}
     if zh_slugs != ja_slugs:
@@ -653,7 +726,7 @@ def build_manifest(
             }
         )
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "edition": edition_date,
         "edition_type": "morning",
         "coverage_start": coverage_start,
@@ -663,7 +736,8 @@ def build_manifest(
         "editorial_origin": "japanese-sources",
         "publication_target": "wordpress",
         "wordpress_default_status": wordpress_status,
-        "expected_counts": dict(EXPECTED_COUNTS),
+        "expected_counts": zh_counts,
+        "count_ranges": _manifest_count_ranges(),
         "posts": items,
     }
 
@@ -686,6 +760,7 @@ def write_generated_edition(
         wordpress_status=wordpress_status,
     )
     ja_posts = collect_posts(root, "ja", edition_date)
+    counts = {str(k): int(v) for k, v in manifest["expected_counts"].items()}
     manifest_path = root / "japanese" / f"edition-{edition_date}.yml"
     chinese_daily_path = root / "daily" / f"{edition_date}.md"
     japanese_daily_path = root / "japanese" / "daily" / f"{edition_date}.md"
@@ -699,6 +774,7 @@ def write_generated_edition(
             coverage_start=coverage_start,
             coverage_end=coverage_end,
             published_at=published_at,
+            counts=counts,
         ),
         encoding="utf-8",
     )
