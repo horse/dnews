@@ -1,0 +1,191 @@
+edition: '2026-07-31'
+lang: ja
+editorial_origin: japanese-sources
+publication_target: wordpress
+expected_counts:
+  core: 8
+  social: 8
+  other: 10
+posts:
+- story_id: 2026-07-31-kumamoto-earthquake-supply-chain
+  slug: kumamoto-earthquake-supply-chain
+  section: core
+  importance: 1
+  title: 熊本地方のM7.1地震、死者34人に　自動車・半導体工場の停止が九州の供給網を直撃
+  excerpt: 7月28日に熊本県熊本地方で起きたマグニチュード7.1の地震は、31日までに死者34人となった。自動車や半導体の工場では停止と点検が続き、復旧は設備の再調整と部品物流の回復に左右される。
+  path: japanese/posts/2026-08-01-kumamoto-earthquake-supply-chain.md
+- story_id: 2026-07-31-boj-holds-rate-inflation-risk
+  slug: boj-holds-rate-inflation-risk
+  section: core
+  importance: 2
+  title: 日銀、政策金利1％を据え置き　物価上振れへの警戒を強め、追加利上げの選択肢を維持
+  excerpt: 日本銀行は7月31日の金融政策決定会合で政策金利を1％に据え置いた。決定は8対1で、高田創審議委員は1.25％への引き上げを提案。円安やエネルギー価格を含む物価上振れリスクへの警戒が強まった。
+  path: japanese/posts/2026-08-01-boj-holds-rate-inflation-risk.md
+- story_id: 2026-07-31-japan-yen-intervention-estimate
+  slug: japan-yen-intervention-estimate
+  section: core
+  importance: 3
+  title: 円買い介入は最大8.2兆円規模か　日銀の資金需給から市場が推計、確定額は8月公表
+  excerpt: 7月末の円買い・ドル売り介入は最大8.2兆円規模だった可能性がある。日銀の資金需給予想と民間予想の差から算出された市場推計で、財務省が公表する正式な月次額を待つ必要がある。
+  path: japanese/posts/2026-08-01-japan-yen-intervention-estimate.md
+- story_id: 2026-07-31-us-treasury-yen-readiness
+  slug: us-treasury-yen-readiness
+  section: core
+  importance: 4
+  title: 米財務省、円相場への介入準備を銀行に通知　7月31日時点で実取引は未確認
+  excerpt: 米財務省はニューヨーク連銀を通じ、複数の銀行に円市場へ介入する可能性に備えるよう通知した。日米協調への警戒から円は上昇したが、7月31日夜の時点で米国による実際の円買いは確認されていなかった。
+  path: japanese/posts/2026-08-01-us-treasury-yen-readiness.md
+- story_id: 2026-07-31-japan-national-intelligence-bureau
+  slug: japan-national-intelligence-bureau
+  section: core
+  importance: 5
+  title: 国家情報局が発足、約700人で省庁横断の分析を担う　権限と監督は今後の焦点
+  excerpt: 政府は7月31日、内閣情報調査室を改組した国家情報局を発足させた。約700人規模で国家情報会議の事務局を担い、警察、防衛、外務などの情報を統合する。対外情報機関や監督制度は引き続き検討課題となる。
+  path: japanese/posts/2026-08-01-japan-national-intelligence-bureau.md
+- story_id: 2026-07-31-tokyo-cpi-july
+  slug: tokyo-cpi-july
+  section: core
+  importance: 6
+  title: 東京都区部の7月物価、2.0％上昇　食料と交通の値上がりを保育料無償化が押し下げ
+  excerpt: 総務省が7月31日に公表した東京都区部の消費者物価指数は前年同月比2.0％上昇した。生鮮食品を除く指数は1.9％。食料、家賃、交通が上昇する一方、保育所保育料の低下が総合指数を押し下げた。
+  path: japanese/posts/2026-08-01-tokyo-cpi-july.md
+- story_id: 2026-07-31-japan-labor-june
+  slug: japan-labor-june
+  section: core
+  importance: 7
+  title: 6月の完全失業率は2.5％で横ばい　就業者増の一方、失業者は11か月連続増加
+  excerpt: 総務省の労働力調査によると、6月の完全失業率は季節調整値で2.5％と前月から横ばいだった。就業者は前年同月比17万人増えた一方、完全失業者も2万人増え、11か月連続の増加となった。
+  path: japanese/posts/2026-08-01-japan-labor-june.md
+- story_id: 2026-07-31-japan-industrial-output-june
+  slug: japan-industrial-output-june
+  section: core
+  importance: 8
+  title: 6月の鉱工業生産は1.3％上昇　7、8月は増産予測も熊本地震が下振れ要因
+  excerpt: 経済産業省の6月鉱工業生産指数は前月比1.3％上昇した。製造工業生産予測調査では7月1.2％、8月4.5％の増産を見込むが、熊本地震による自動車・半導体の停止は予測の下振れ要因となる。
+  path: japanese/posts/2026-08-01-japan-industrial-output-june.md
+- story_id: 2026-07-31-kumamoto-water-heat-evacuation
+  slug: kumamoto-water-heat-evacuation
+  section: social
+  importance: 101
+  title: 熊本地震、断水と猛暑が避難生活を圧迫　復旧の焦点は水・衛生・暑さ対策へ
+  excerpt: 熊本地震の発生から数日がたち、被災地では断水、停電、災害ごみ、猛暑が重なる。熊本市は井戸水の提供や特別収集を始め、避難所の飲料水、衛生、熱中症対策が復旧の中心課題となった。
+  path: japanese/posts/2026-08-01-kumamoto-water-heat-evacuation.md
+- story_id: 2026-07-31-kumamoto-red-cross-emergency-care
+  slug: kumamoto-red-cross-emergency-care
+  section: social
+  importance: 102
+  title: 熊本赤十字病院、一般外来と予定入院を休止　地震負傷者の救急診療に人員を集中
+  excerpt: 熊本赤十字病院は7月29日から31日まで一般外来と予定入院を休止し、救命救急センターを地震負傷者と急病患者の受け入れに集中させた。災害時には、通常医療の中断をいかに短くするかも地域医療の課題となる。
+  path: japanese/posts/2026-08-01-kumamoto-red-cross-emergency-care.md
+- story_id: 2026-07-31-kumamoto-public-facility-closures
+  slug: kumamoto-public-facility-closures
+  section: social
+  importance: 103
+  title: 熊本市で公共施設の休館相次ぐ　文化、福祉、スポーツ、行政サービスに地震の影響
+  excerpt: 熊本市は地震後、博物館、美術館、体育施設、老人福祉センター、創業支援施設などの休館と行事中止を相次いで公表した。安全点検の長期化は、住民の日常を支える公共サービスの空白につながる。
+  path: japanese/posts/2026-08-01-kumamoto-public-facility-closures.md
+- story_id: 2026-07-31-tomoiku-end-solo-parenting
+  slug: tomoiku-end-solo-parenting
+  section: social
+  importance: 104
+  title: 「ワンオペ育児」を終えるには　厚労省の「共育プロジェクト」が家庭と職場の分担を問う
+  excerpt: 7月31日に「ワンオペ育児からの脱却」をテーマとするオンライン企画が開かれた。厚生労働省の「共育プロジェクト」は、男性の育児休業取得だけでなく、家事・育児の分担と職場の働き方を一体で見直す方向へ進む。
+  path: japanese/posts/2026-08-01-tomoiku-end-solo-parenting.md
+- story_id: 2026-07-31-tokyo-skilled-trades-succession
+  slug: tokyo-skilled-trades-succession
+  section: social
+  importance: 105
+  title: 東京の「ものづくり・匠の技の祭典」開幕　若者、女性、AIを技能継承の入口に
+  excerpt: 東京都の「ものづくり・匠の技の祭典」が7月31日に東京国際フォーラムで始まった。100を超える体験、若手・女性技能者の紹介、江戸小紋とAIの展示を通じ、技能職への入口を広げる。
+  path: japanese/posts/2026-08-01-tokyo-skilled-trades-succession.md
+- story_id: 2026-07-31-tokyo-art-accessibility-exhibition
+  slug: tokyo-art-accessibility-exhibition
+  section: social
+  importance: 106
+  title: 東京都美術館の100周年展、触察・点字・手話を展示に組み込む　鑑賞の入口を再設計
+  excerpt: 東京都美術館は7月31日、開館100周年を記念するアート・コミュニケーション展を始めた。触れられる作品、点字、音声、触図、手話動画、対話支援を備え、文化施設のアクセシビリティを展示そのものの課題にした。
+  path: japanese/posts/2026-08-01-tokyo-art-accessibility-exhibition.md
+- story_id: 2026-07-31-japan-environment-plan-review
+  slug: japan-environment-plan-review
+  section: social
+  importance: 107
+  title: 第6次環境基本計画を点検　脱炭素だけでなく「ウェルビーイング」をどう測るか
+  excerpt: 中央環境審議会は7月31日、第6次環境基本計画の進捗点検を議論した。脱炭素、循環経済、自然共生に加え、健康、地域経済、暮らしの質を改善したかを政策評価に組み込む。
+  path: japanese/posts/2026-08-01-japan-environment-plan-review.md
+- story_id: 2026-07-31-tokyo-life-opinion-survey
+  slug: tokyo-life-opinion-survey
+  section: social
+  importance: 108
+  title: 東京都、4000人対象の「都民生活」世論調査を開始　日常の実感を政策資料に
+  excerpt: 東京都は7月31日、無作為抽出した都民4000人を対象とする「都民生活に関する世論調査」を始めた。生活実感、地域への意識、都政への要望を郵送・無記名で尋ね、行政判断の基礎資料とする。
+  path: japanese/posts/2026-08-01-tokyo-life-opinion-survey.md
+- story_id: 2026-07-31-kahaku-human-earth-exhibition
+  slug: kahaku-human-earth-exhibition
+  section: other
+  importance: 201
+  title: 国立科学博物館と地球研、「どうする、ニンゲン」展　研究現場から地球の未来を問う
+  excerpt: 国立科学博物館と総合地球環境学研究所の共同企画展が7月31日に開幕した。環境問題を科学データだけでなく、人間の文化、地域の暮らし、価値判断との関係から考える。
+  path: japanese/posts/2026-08-01-kahaku-human-earth-exhibition.md
+- story_id: 2026-07-31-conrad-nagoya-opening
+  slug: conrad-nagoya-opening
+  section: other
+  importance: 202
+  title: コンラッド名古屋が栄に開業　高級ホテルが都心再開発の新たな拠点に
+  excerpt: コンラッド名古屋が7月31日、名古屋市中区のザ・ランドマーク名古屋栄に開業した。客室170室、飲食施設、宴会場、プールを備え、栄地区の再開発と国際観光の受け皿となる。
+  path: japanese/posts/2026-08-01-conrad-nagoya-opening.md
+- story_id: 2026-07-31-national-art-center-family-week
+  slug: national-art-center-family-week
+  section: other
+  importance: 203
+  title: 国立新美術館、「おしゃべり鑑賞タイム」を設定　親子が声を出せる展示室へ
+  excerpt: 国立新美術館は7月31日、「ピカソ meets ポール・スミス」のファミリーウィークを開始した。午前中に会話できる鑑賞時間を設け、子ども連れが静粛規範を気にせず作品について話せるようにする。
+  path: japanese/posts/2026-08-01-national-art-center-family-week.md
+- story_id: 2026-07-31-yoshimura-akira-yuonki
+  slug: yoshimura-akira-yuonki
+  section: other
+  importance: 204
+  title: 吉村昭没後20年、三鷹の書斎で「悠遠忌」　作家の仕事場と調査の足跡を公開
+  excerpt: 作家・吉村昭の命日である7月31日、三鷹市吉村昭書斎で「悠遠忌」の特別企画が行われた。没後20年に合わせ、普段は外から見る書斎の入口を開き、田野畑村との関係を紹介する。
+  path: japanese/posts/2026-08-01-yoshimura-akira-yuonki.md
+- story_id: 2026-07-31-okayama-ponpon-boat-exhibition
+  slug: okayama-ponpon-boat-exhibition
+  section: other
+  importance: 205
+  title: 岡山県立博物館で「ポンポン船」展　木造船から瀬戸内の交通と暮らしをたどる
+  excerpt: 岡山県立博物館は7月31日、発動機音から「ポンポン船」と呼ばれた木造機帆船を中心とする企画展を始めた。高瀬舟や田舟も紹介し、水運と造船技術の記憶を残す。
+  path: japanese/posts/2026-08-01-okayama-ponpon-boat-exhibition.md
+- story_id: 2026-07-31-japan-medical-education-conference
+  slug: japan-medical-education-conference
+  section: other
+  importance: 206
+  title: 日本医学教育学会が富山で開幕　医師養成と地域医療を結ぶ課題を議論
+  excerpt: 第58回日本医学教育学会大会が7月31日に富山で開幕した。カリキュラム改革、臨床実習、地域医療、多職種連携を扱い、地方で医師を育て定着させる仕組みを考える。
+  path: japanese/posts/2026-08-01-japan-medical-education-conference.md
+- story_id: 2026-07-31-medical-physics-summer-seminar
+  slug: medical-physics-summer-seminar
+  section: other
+  importance: 207
+  title: 医学物理サマーセミナー、福島で開講　放射線治療の安全を支える専門人材を育成
+  excerpt: 日本医学物理学会は7月31日、福島で3日間の医学物理サマーセミナーを始めた。放射線治療、医学画像、線量計算、放射線防護を学び、治療の品質保証を担う医学物理士の育成につなげる。
+  path: japanese/posts/2026-08-01-medical-physics-summer-seminar.md
+- story_id: 2026-07-31-japan-cinema-july31
+  slug: japan-cinema-july31
+  section: other
+  importance: 208
+  title: 7月31日の日本公開映画、ディズニー大作から戦争史・有機農業の記録まで
+  excerpt: 日本の映画館では7月31日、実写版「モアナと伝説の海」、戦争決定を扱う「開戦前夜」、有機農業と学校給食を追う「身土不二」など、規模と題材の異なる新作が公開された。
+  path: japanese/posts/2026-08-01-japan-cinema-july31.md
+- story_id: 2026-07-31-npb-july31-roundup
+  slug: npb-july31-roundup
+  section: other
+  importance: 209
+  title: プロ野球、球宴後のリーグ戦再開　巨人がDeNAを完封、楽天―ソフトバンクは中止
+  excerpt: プロ野球は7月31日、オールスター後の公式戦を再開した。巨人はDeNAに6―0、日本ハムはロッテに6―1で勝利。阪神、広島、オリックスも白星を挙げ、楽天―ソフトバンク戦は中止となった。
+  path: japanese/posts/2026-08-01-npb-july31-roundup.md
+- story_id: 2026-07-31-kasai-sunflower-lighting
+  slug: kasai-sunflower-lighting
+  section: other
+  importance: 210
+  title: 葛西臨海公園、4万本のヒマワリを夜間ライトアップ　都市公園の滞在時間を広げる
+  excerpt: 葛西臨海公園は7月31日、夏の「花と光のムーブメント」を開始した。約4万本のヒマワリを午後6時から11時まで照らし、海の生き物を題材にした灯籠も設ける。
+  path: japanese/posts/2026-08-01-kasai-sunflower-lighting.md

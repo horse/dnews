@@ -32,6 +32,7 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - wordpress
+  - japanese
   - tests
   - docs/superpowers
   - vendor
