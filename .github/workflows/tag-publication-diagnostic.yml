@@ -1,0 +1,73 @@
+name: Verify published tag navigation
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tag-publication-diagnostic.yml'
+
+permissions:
+  contents: read
+  pages: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Read Pages configuration
+        uses: actions/configure-pages@v5
+
+      - name: Build with GitHub Pages Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Run repository tag acceptance checks
+        run: SKIP_BUILD=1 bash tests/test_tags.sh
+
+      - name: Probe published Pages URLs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          check_page() {
+            local url="$1"
+            local expected="$2"
+            local body
+            body="$(mktemp)"
+
+            for attempt in $(seq 1 30); do
+              code="$(curl --location --silent --show-error --output "$body" --write-out '%{http_code}' --max-time 30 "$url" || true)"
+              if [[ "$code" == "200" ]] && grep -q "$expected" "$body"; then
+                echo "PUBLIC_OK url=$url attempt=$attempt code=$code expected=$expected"
+                rm -f "$body"
+                return 0
+              fi
+              echo "waiting url=$url attempt=$attempt code=$code"
+              sleep 10
+            done
+
+            echo "FAILED url=$url expected=$expected"
+            sed -n '1,80p' "$body"
+            rm -f "$body"
+            return 1
+          }
+
+          check_page 'https://horse.github.io/dnews/' 'class="tag-pill"'
+          check_page 'https://horse.github.io/dnews/daily/2026-07-31/' '日本气象厅'
+          check_page 'https://horse.github.io/dnews/tags/' '标签收录新闻正文中出现的'
+          check_page 'https://horse.github.io/dnews/news/2026/07/31/kumamoto-earthquake-supply-chain/' '相关标签'
+
+      - name: Verify published tag anchor pair
+        shell: bash
+        run: |
+          article="$(mktemp)"
+          tags="$(mktemp)"
+          curl --location --silent --show-error --fail 'https://horse.github.io/dnews/news/2026/07/31/kumamoto-earthquake-supply-chain/' > "$article"
+          curl --location --silent --show-error --fail 'https://horse.github.io/dnews/tags/' > "$tags"
+          grep -q 'href="/dnews/tags/#%E6%97%A5%E6%9C%AC%E6%B0%94%E8%B1%A1%E5%8E%85"' "$article"
+          grep -q 'id="日本气象厅"' "$tags"
+          echo 'TAG_ANCHOR_OK=true tag=日本气象厅'
