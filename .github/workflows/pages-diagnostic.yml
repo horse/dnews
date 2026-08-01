@@ -1,0 +1,53 @@
+name: Diagnose Pages build and publication
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/pages-diagnostic.yml
+
+permissions:
+  contents: read
+  pages: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Read GitHub Pages configuration
+        uses: actions/configure-pages@v5
+
+      - name: Build site with the Pages Jekyll environment
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Verify generated homepage
+        shell: bash
+        run: |
+          test -f _site/index.html
+          grep -q '从日本的信息洪流中' _site/index.html
+          echo 'LOCAL_BUILD_OK=true'
+
+      - name: Wait for main deployment and probe public site
+        shell: bash
+        run: |
+          set -u
+          site_url='https://horse.github.io/dnews/'
+          body_file="$(mktemp)"
+          for attempt in $(seq 1 30); do
+            http_code="$(curl --location --silent --show-error --output "$body_file" --write-out '%{http_code}' --max-time 30 "$site_url" || true)"
+            if [ "$http_code" = '200' ] && grep -q '从日本的信息洪流中' "$body_file"; then
+              echo "PUBLICATION_OK=true attempt=$attempt HTTP_CODE=$http_code"
+              exit 0
+            fi
+            echo "attempt=$attempt HTTP_CODE=$http_code expected_content=false"
+            sleep 10
+          done
+
+          echo '--- Final response body ---'
+          sed -n '1,60p' "$body_file"
+          exit 1
