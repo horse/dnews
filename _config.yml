@@ -1,0 +1,34 @@
+title: dnews
+description: "每天从日本信息环境中筛选重要事件，重新检索、核验并写成可独立阅读的中文新闻。"
+lang: zh-CN
+timezone: Asia/Tokyo
+url: "https://horse.github.io"
+baseurl: "/dnews"
+
+theme: minima
+show_excerpts: true
+permalink: /news/:year/:month/:day/:title/
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+header_pages:
+  - archive.md
+  - about.md
+
+author:
+  name: shinkiji editorial
+
+social_links:
+  github: horse
+
+markdown: kramdown
+future: false
+
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - wordpress
+  - vendor
