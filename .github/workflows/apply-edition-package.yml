@@ -6,22 +6,35 @@ on:
       - 'news/**'
     paths:
       - '.edition-package-*.ready'
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths:
+      - '.edition-package-*.ready'
 
 permissions:
   contents: write
 
 concurrency:
-  group: apply-edition-${{ github.ref }}
+  group: apply-edition-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
   apply:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
     steps:
-      - name: Check out branch
+      - name: Check out source branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Locate package marker
         id: package
@@ -128,4 +141,4 @@ jobs:
             exit 0
           fi
           git commit -m "Add ${EDITION_DATE} bilingual morning edition"
-          git push origin HEAD
+          git push origin "HEAD:${TARGET_BRANCH}"
