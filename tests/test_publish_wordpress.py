@@ -10,6 +10,7 @@ from publish_wordpress import (
     is_retryable_status,
     make_post_payload,
     normalize_password,
+    normalize_status_override,
     post_lookup_action,
 )
 
@@ -33,6 +34,13 @@ class PublisherTests(unittest.TestCase):
         self.assertFalse(is_retryable_status(400))
         self.assertFalse(is_retryable_status(401))
 
+    def test_normalize_status_override_allows_only_draft_or_publish(self):
+        self.assertIsNone(normalize_status_override(None))
+        self.assertEqual(normalize_status_override("draft"), "draft")
+        self.assertEqual(normalize_status_override("publish"), "publish")
+        with self.assertRaisesRegex(ValueError, "Unsupported status override"):
+            normalize_status_override("private")
+
     def test_make_post_payload_maps_wordpress_fields(self):
         data = {
             "title": "見出し",
@@ -49,6 +57,22 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(payload["categories"], [10])
         self.assertEqual(payload["tags"], [20, 21])
         self.assertEqual(payload["date"], "2026-08-01T09:00:00+09:00")
+
+    def test_make_post_payload_can_explicitly_publish(self):
+        data = {
+            "title": "見出し",
+            "slug": "sample-story",
+            "excerpt": "要約",
+            "wordpress": {"status": "draft", "comment_status": "closed"},
+        }
+        payload = make_post_payload(
+            data,
+            "<p>本文</p>",
+            [10],
+            [20],
+            status_override="publish",
+        )
+        self.assertEqual(payload["status"], "publish")
 
     def test_post_lookup_action_is_idempotent(self):
         self.assertEqual(post_lookup_action([]), ("create", None))
