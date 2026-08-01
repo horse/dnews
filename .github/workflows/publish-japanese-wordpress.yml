@@ -1,0 +1,146 @@
+name: Publish Japanese WordPress edition
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'japanese/posts/**'
+      - 'japanese/daily/**'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Content set to synchronize
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - posts
+          - daily
+          - one
+      slug:
+        description: Required only when mode is one
+        required: false
+        type: string
+      status:
+        description: Final WordPress status
+        required: true
+        default: publish
+        type: choice
+        options:
+          - publish
+          - draft
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-japanese-wordpress
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check requests PyYAML Markdown
+
+      - name: Validate Japanese edition and publisher
+        run: |
+          ruby tests/test_japanese_edition.rb
+          python -m unittest tests/test_publish_wordpress.py -v
+
+      - name: Synchronize Japanese content
+        env:
+          WP_BASE_URL: https://shinkiji.com
+          WP_USERNAME: shinkiji
+          WP_APP_PASSWORD: ${{ secrets.shinkiji }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_SLUG: ${{ inputs.slug }}
+          INPUT_STATUS: ${{ inputs.status }}
+        run: |
+          test -n "$WP_APP_PASSWORD"
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, str(Path('tools').resolve()))
+          from publish_wordpress import WordPressClient, markdown_to_html, parse_markdown, select_paths
+
+          event_name = os.environ.get('EVENT_NAME', 'push')
+          mode = (os.environ.get('INPUT_MODE') or 'all') if event_name == 'workflow_dispatch' else 'all'
+          slug = (os.environ.get('INPUT_SLUG') or '').strip() or None
+          final_status = (os.environ.get('INPUT_STATUS') or 'publish') if event_name == 'workflow_dispatch' else 'publish'
+          if final_status not in {'publish', 'draft'}:
+              raise ValueError(f'Unsupported final status: {final_status}')
+
+          root = Path('.').resolve()
+          paths = select_paths(root, mode, slug)
+          client = WordPressClient(
+              os.environ['WP_BASE_URL'],
+              os.environ['WP_USERNAME'],
+              os.environ['WP_APP_PASSWORD'],
+          )
+          user = client.verify()
+          results = []
+
+          for path in paths:
+              data, body = parse_markdown(path)
+              if data.get('publication_target') != 'wordpress':
+                  raise ValueError(f'Not a WordPress target: {path}')
+              html = markdown_to_html(body)
+              post_cache = client.load_posts()
+              article_slug = str(data['slug'])
+
+              if final_status == 'publish':
+                  if not post_cache.get(article_slug):
+                      client.upsert(data, html, status_override=None)
+                  result = client.upsert(data, html, status_override='publish')
+              else:
+                  result = client.upsert(data, html, status_override='draft')
+
+              result['path'] = str(path.relative_to(root))
+              results.append(result)
+              print(json.dumps(result, ensure_ascii=False))
+
+          report = {
+              'site': client.base_url,
+              'authenticated_user': {
+                  'id': user.get('id'),
+                  'name': user.get('name'),
+                  'slug': user.get('slug'),
+              },
+              'mode': mode,
+              'final_status': final_status,
+              'count': len(results),
+              'results': results,
+          }
+          Path('wordpress-publish-report.json').write_text(
+              json.dumps(report, ensure_ascii=False, indent=2),
+              encoding='utf-8',
+          )
+          assert all(item['status'] == final_status for item in results), report
+          PY
+
+      - name: Upload publication report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wordpress-publish-report
+          path: wordpress-publish-report.json
+          if-no-files-found: ignore
+          retention-days: 7
