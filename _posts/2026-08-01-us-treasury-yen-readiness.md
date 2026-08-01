@@ -3,6 +3,7 @@ layout: post
 title: 美国财政部通知银行准备介入日元市场，日美协调进入实务层面
 date: '2026-08-01 09:05:00 +0900'
 news_date: '2026-07-31'
+daily_section: core
 permalink: /news/2026/07/31/us-treasury-yen-readiness/
 slug: us-treasury-yen-readiness
 excerpt: 美国财政部经纽约联储通知多家银行，为可能介入日元市场做好准备。消息推动日元走强，但截至7月31日日本时间深夜，美国是否已经实际成交仍未得到官方确认。

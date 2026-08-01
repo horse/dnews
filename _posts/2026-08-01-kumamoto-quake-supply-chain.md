@@ -3,6 +3,7 @@ layout: post
 title: 熊本7.1级地震死亡人数升至34人，汽车与半导体工厂停产检验供应链韧性
 date: '2026-08-01 09:08:00 +0900'
 news_date: '2026-07-31'
+daily_section: core
 permalink: /news/2026/07/31/kumamoto-earthquake-supply-chain/
 slug: kumamoto-earthquake-supply-chain
 excerpt: 熊本7.1级地震的死亡人数升至34人。丰田、日产、三菱汽车以及瑞萨、索尼等企业暂停或限制生产，九州汽车与半导体产业带进入恢复能力的现实检验。

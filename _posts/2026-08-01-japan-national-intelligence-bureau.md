@@ -3,6 +3,7 @@ layout: post
 title: 日本国家情报局正式启动，约700人机构成为国家情报会议事务中枢
 date: '2026-08-01 09:04:00 +0900'
 news_date: '2026-07-31'
+daily_section: core
 permalink: /news/2026/07/31/japan-national-intelligence-bureau/
 slug: japan-national-intelligence-bureau
 excerpt: 日本7月31日把内阁情报调查室升级为国家情报局，初期约700人，由原和也出任首任局长。新机构负责整合各省厅情报，并支援首相主持的国家情报会议。

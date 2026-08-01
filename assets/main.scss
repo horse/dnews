@@ -300,3 +300,27 @@ body {
     margin-top: 0.12rem;
   }
 }
+
+
+/* Expanded daily edition */
+.daily-section { margin: 3.4rem 0 4rem; }
+.daily-section__header { max-width: 800px; margin-bottom: 1.5rem; }
+.daily-section__header h2, .home-section-title { margin: 0.2rem 0 0.55rem; font-size: clamp(1.65rem, 3vw, 2.35rem); line-height: 1.22; }
+.daily-section__header > p:last-child { color: var(--muted); }
+.social-grid, .brief-grid { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.social-card, .brief-card { border: 1px solid var(--rule); background: var(--card); }
+.social-card { padding: 1.35rem 1.45rem; }
+.brief-card { padding: 1.1rem 1.2rem; }
+.social-card h3, .brief-card h3 { margin: 0.3rem 0 0.55rem; line-height: 1.38; }
+.social-card h3 { font-size: 1.25rem; }
+.brief-card h3 { font-size: 1.08rem; }
+.social-card p, .brief-card p { color: var(--muted); margin-bottom: 0; }
+.home-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin: 3.4rem 0 1.2rem; border-top: 1px solid var(--rule); padding-top: 1.5rem; }
+.home-section-heading .section-kicker { margin-bottom: 0; }
+.home-section-heading a { flex: 0 0 auto; color: var(--accent); font-size: 0.92rem; }
+.social-grid--home, .brief-grid--home { margin-bottom: 3.4rem; }
+@media (max-width: 720px) {
+  .social-grid, .brief-grid { grid-template-columns: 1fr; }
+  .home-section-heading { display: block; }
+  .home-section-heading a { display: inline-block; margin-top: 0.5rem; }
+}
