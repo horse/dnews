@@ -9,7 +9,8 @@ import string
 import tarfile
 from pathlib import Path
 
-SCRIPT = Path(__file__).with_name("generate_expanded_daily.py")
+SELF = Path(__file__)
+SCRIPT = SELF.with_name("generate_expanded_daily.py")
 source = SCRIPT.read_text(encoding="utf-8")
 match = re.search(r'PAYLOAD = """([A-Za-z0-9+/=\r\n]+)"""', source)
 if not match:
@@ -81,3 +82,5 @@ if fixed is None:
 print(f"Validated payload repair: {len(fixed)} Base64 characters, {len(expected)} files")
 repaired = source[: match.start(1)] + fixed + source[match.end(1) :]
 exec(compile(repaired, str(SCRIPT), "exec"), {"__file__": str(SCRIPT), "__name__": "__main__"})
+if SELF.exists():
+    SELF.unlink()
