@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,14 @@ def exact_term_id(terms: list[dict[str, Any]], name: str) -> int | None:
         if str(term.get("name", "")) == name:
             return int(term["id"])
     return None
+
+
+def index_terms(terms: list[dict[str, Any]]) -> dict[str, int]:
+    return {str(term.get("name", "")): int(term["id"]) for term in terms if term.get("id") is not None}
+
+
+def is_retryable_status(status_code: int) -> bool:
+    return status_code in {408, 425, 429, 500, 502, 503, 504}
 
 
 def normalize_wp_date(value: Any) -> str | None:
@@ -81,41 +90,91 @@ def markdown_to_html(body: str) -> str:
 
 
 class WordPressClient:
-    def __init__(self, base_url: str, username: str, password: str, timeout: int = 45):
+    def __init__(self, base_url: str, username: str, password: str, timeout: int = 45, max_attempts: int = 6):
         import requests
 
         self.base_url = base_url.rstrip("/")
         self.api = f"{self.base_url}/wp-json/wp/v2"
         self.session = requests.Session()
         self.session.auth = (username, normalize_password(password))
+        self.session.headers.update({"User-Agent": "dnews-wordpress-publisher/1.0"})
         self.timeout = timeout
+        self.max_attempts = max_attempts
+        self.term_cache: dict[str, dict[str, int]] = {}
+        self.post_cache: dict[str, list[dict[str, Any]]] | None = None
 
     def request(self, method: str, url: str, **kwargs: Any) -> Any:
-        response = self.session.request(method, url, timeout=self.timeout, **kwargs)
-        if response.status_code >= 400:
-            detail = response.text[:1000]
-            raise RuntimeError(f"WordPress {response.status_code}: {detail}")
-        if not response.text:
-            return None
-        return response.json()
+        import requests
+
+        last_error: Exception | None = None
+        for attempt in range(1, self.max_attempts + 1):
+            try:
+                response = self.session.request(method, url, timeout=self.timeout, **kwargs)
+                if response.status_code >= 400:
+                    detail = response.text[:1000]
+                    error = RuntimeError(f"WordPress {response.status_code}: {detail}")
+                    if is_retryable_status(response.status_code) and attempt < self.max_attempts:
+                        last_error = error
+                        time.sleep(min(2 ** (attempt - 1), 16))
+                        continue
+                    raise error
+                if not response.text:
+                    return None
+                return response.json()
+            except requests.RequestException as exc:
+                last_error = exc
+                if attempt >= self.max_attempts:
+                    break
+                time.sleep(min(2 ** (attempt - 1), 16))
+        raise RuntimeError(f"WordPress request failed after {self.max_attempts} attempts: {last_error}")
+
+    def fetch_all(self, endpoint: str, params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+        items: list[dict[str, Any]] = []
+        page = 1
+        while True:
+            page_params = dict(params or {})
+            page_params.update({"per_page": 100, "page": page})
+            batch = self.request("GET", endpoint, params=page_params)
+            if not isinstance(batch, list):
+                raise RuntimeError(f"Expected a list from {endpoint}")
+            items.extend(batch)
+            if len(batch) < 100:
+                return items
+            page += 1
 
     def verify(self) -> dict[str, Any]:
         return self.request("GET", f"{self.api}/users/me", params={"context": "edit"})
 
+    def load_terms(self, taxonomy: str) -> dict[str, int]:
+        if taxonomy not in self.term_cache:
+            terms = self.fetch_all(f"{self.api}/{taxonomy}", {"context": "edit"})
+            self.term_cache[taxonomy] = index_terms(terms)
+        return self.term_cache[taxonomy]
+
     def ensure_term(self, taxonomy: str, name: str) -> int:
+        cache = self.load_terms(taxonomy)
+        if name in cache:
+            return cache[name]
         endpoint = f"{self.api}/{taxonomy}"
-        terms = self.request("GET", endpoint, params={"search": name, "per_page": 100, "context": "edit"})
-        found = exact_term_id(terms, name)
-        if found is not None:
-            return found
         try:
             created = self.request("POST", endpoint, json={"name": name})
-            return int(created["id"])
+            term_id = int(created["id"])
         except RuntimeError as exc:
             match = re.search(r'"term_id"\s*:\s*(\d+)', str(exc))
-            if match:
-                return int(match.group(1))
-            raise
+            if not match:
+                raise
+            term_id = int(match.group(1))
+        cache[name] = term_id
+        return term_id
+
+    def load_posts(self) -> dict[str, list[dict[str, Any]]]:
+        if self.post_cache is None:
+            posts = self.fetch_all(f"{self.api}/posts", {"status": "any", "context": "edit"})
+            cache: dict[str, list[dict[str, Any]]] = {}
+            for post in posts:
+                cache.setdefault(str(post.get("slug", "")), []).append(post)
+            self.post_cache = cache
+        return self.post_cache
 
     def upsert(self, data: dict[str, Any], html: str) -> dict[str, Any]:
         wp = data.get("wordpress") or {}
@@ -123,17 +182,16 @@ class WordPressClient:
         tag_names = list(wp.get("tags") or data.get("tags") or [])
         category_ids = [self.ensure_term("categories", str(name)) for name in category_names]
         tag_ids = [self.ensure_term("tags", str(name)) for name in tag_names]
-        posts = self.request(
-            "GET",
-            f"{self.api}/posts",
-            params={"slug": data["slug"], "status": "any", "context": "edit", "per_page": 100},
-        )
-        action, post_id = post_lookup_action(posts)
+
+        post_cache = self.load_posts()
+        slug = str(data["slug"])
+        action, post_id = post_lookup_action(post_cache.get(slug, []))
         payload = make_post_payload(data, html, category_ids, tag_ids)
         if action == "create":
             result = self.request("POST", f"{self.api}/posts", json=payload)
         else:
             result = self.request("POST", f"{self.api}/posts/{post_id}", json=payload)
+        post_cache[slug] = [result]
         return {
             "action": action,
             "id": int(result["id"]),
@@ -163,6 +221,10 @@ def select_paths(root: Path, mode: str, slug: str | None) -> list[Path]:
     raise ValueError(f"Unsupported mode: {mode}")
 
 
+def write_report(path: Path, report: dict[str, Any]) -> None:
+    path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def main() -> int:
     import yaml
 
@@ -173,36 +235,41 @@ def main() -> int:
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
+    report_path = Path(args.report)
     request_data = yaml.safe_load(Path(args.request).read_text(encoding="utf-8")) or {}
     mode = str(request_data.get("mode", "one"))
     slug = request_data.get("slug")
 
-    client = WordPressClient(
-        os.environ["WP_BASE_URL"],
-        os.environ["WP_USERNAME"],
-        os.environ["WP_APP_PASSWORD"],
-    )
+    client = WordPressClient(os.environ["WP_BASE_URL"], os.environ["WP_USERNAME"], os.environ["WP_APP_PASSWORD"])
     user = client.verify()
-    results = []
-    for path in select_paths(root, mode, slug):
-        data, body = parse_markdown(path)
-        if data.get("publication_target") != "wordpress":
-            raise ValueError(f"Not a WordPress target: {path}")
-        if (data.get("wordpress") or {}).get("status") != "draft":
-            raise ValueError(f"Only draft publication is allowed: {path}")
-        result = client.upsert(data, markdown_to_html(body))
-        result["path"] = str(path.relative_to(root))
-        results.append(result)
-
-    report = {
+    report: dict[str, Any] = {
         "site": client.base_url,
         "authenticated_user": {"id": user.get("id"), "name": user.get("name"), "slug": user.get("slug")},
         "mode": mode,
-        "count": len(results),
-        "results": results,
+        "count": 0,
+        "results": [],
     }
-    Path(args.report).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({"site": client.base_url, "mode": mode, "count": len(results), "results": results}, ensure_ascii=False))
+    write_report(report_path, report)
+
+    try:
+        for index, path in enumerate(select_paths(root, mode, slug), start=1):
+            data, body = parse_markdown(path)
+            if data.get("publication_target") != "wordpress":
+                raise ValueError(f"Not a WordPress target: {path}")
+            if (data.get("wordpress") or {}).get("status") != "draft":
+                raise ValueError(f"Only draft publication is allowed: {path}")
+            result = client.upsert(data, markdown_to_html(body))
+            result["path"] = str(path.relative_to(root))
+            report["results"].append(result)
+            report["count"] = len(report["results"])
+            write_report(report_path, report)
+            print(json.dumps({"progress": index, "result": result}, ensure_ascii=False), flush=True)
+    except Exception as exc:
+        report["error"] = f"{type(exc).__name__}: {exc}"
+        write_report(report_path, report)
+        raise
+
+    print(json.dumps(report, ensure_ascii=False), flush=True)
     return 0
 
 
