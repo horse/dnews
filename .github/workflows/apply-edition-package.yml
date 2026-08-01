@@ -5,7 +5,7 @@ on:
     branches:
       - 'news/**'
     paths:
-      - '.edition-package-*.tar.gz.b64'
+      - '.edition-package-*.ready'
 
 permissions:
   contents: write
@@ -23,32 +23,52 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Locate and validate package
+      - name: Locate package marker
         id: package
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t packages < <(find . -maxdepth 1 -type f -name '.edition-package-*.tar.gz.b64' -printf '%f\n' | sort)
-          if [[ ${#packages[@]} -ne 1 ]]; then
-            echo "Expected exactly one edition package, found ${#packages[@]}" >&2
+          mapfile -t markers < <(find . -maxdepth 1 -type f -name '.edition-package-*.ready' -printf '%f\n' | sort)
+          if [[ ${#markers[@]} -ne 1 ]]; then
+            echo "Expected exactly one edition marker, found ${#markers[@]}" >&2
             exit 1
           fi
-          package="${packages[0]}"
-          if [[ ! "$package" =~ ^\.edition-package-([0-9]{4}-[0-9]{2}-[0-9]{2})\.tar\.gz\.b64$ ]]; then
-            echo "Invalid package name: $package" >&2
+          marker="${markers[0]}"
+          if [[ ! "$marker" =~ ^\.edition-package-([0-9]{4}-[0-9]{2}-[0-9]{2})\.ready$ ]]; then
+            echo "Invalid marker name: $marker" >&2
             exit 1
           fi
-          echo "package=$package" >> "$GITHUB_OUTPUT"
-          echo "edition_date=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+          edition_date="${BASH_REMATCH[1]}"
+          expected_sha="$(tr -d '[:space:]' < "$marker")"
+          if [[ ! "$expected_sha" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "Marker must contain a SHA-256 digest" >&2
+            exit 1
+          fi
+          echo "marker=$marker" >> "$GITHUB_OUTPUT"
+          echo "edition_date=$edition_date" >> "$GITHUB_OUTPUT"
+          echo "expected_sha=$expected_sha" >> "$GITHUB_OUTPUT"
 
-      - name: Decode and safely extract edition
+      - name: Assemble, verify and safely extract edition
         env:
-          PACKAGE: ${{ steps.package.outputs.package }}
+          MARKER: ${{ steps.package.outputs.marker }}
           EDITION_DATE: ${{ steps.package.outputs.edition_date }}
+          EXPECTED_SHA: ${{ steps.package.outputs.expected_sha }}
         shell: bash
         run: |
           set -euo pipefail
-          base64 --decode "$PACKAGE" > /tmp/edition.tar.gz
+          shopt -s nullglob
+          parts=(.edition-package-"$EDITION_DATE".tar.xz.b64.part*)
+          if [[ ${#parts[@]} -lt 1 ]]; then
+            echo "No package parts found" >&2
+            exit 1
+          fi
+          printf '%s\n' "${parts[@]}" | sort -V | xargs cat > /tmp/edition.tar.xz.b64
+          base64 --decode /tmp/edition.tar.xz.b64 > /tmp/edition.tar.xz
+          actual_sha="$(sha256sum /tmp/edition.tar.xz | awk '{print $1}')"
+          if [[ "$actual_sha" != "$EXPECTED_SHA" ]]; then
+            echo "Package digest mismatch: $actual_sha != $EXPECTED_SHA" >&2
+            exit 1
+          fi
           python - <<'PY'
           import os
           import pathlib
@@ -64,7 +84,7 @@ jobs:
               f'_posts/{edition}-',
               f'japanese/posts/{edition}-',
           )
-          with tarfile.open('/tmp/edition.tar.gz', 'r:gz') as archive:
+          with tarfile.open('/tmp/edition.tar.xz', 'r:xz') as archive:
               members = archive.getmembers()
               if not members:
                   raise SystemExit('Edition package is empty')
@@ -79,7 +99,7 @@ jobs:
                       raise SystemExit(f'Path outside edition allowlist: {name}')
               archive.extractall('.')
           PY
-          rm -f "$PACKAGE" /tmp/edition.tar.gz
+          rm -f "$MARKER" "${parts[@]}" /tmp/edition.tar.xz /tmp/edition.tar.xz.b64
 
       - name: Install validator dependencies
         run: python -m pip install --disable-pip-version-check PyYAML Markdown requests
