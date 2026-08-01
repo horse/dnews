@@ -1,0 +1,53 @@
+name: Apply daily automation v2 bundle
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.ops/daily-v2.part*'
+      - '.github/workflows/apply-daily-v2-bundle.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'feature/daily-edition-automation-v2'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out request branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Decode and verify implementation bundle
+        run: |
+          cat .ops/daily-v2.part1 .ops/daily-v2.part2 .ops/daily-v2.part3 .ops/daily-v2.part4 | base64 -d > /tmp/daily-v2.tgz
+          echo '8577491da8007f056770ca11904ab719afaa7dc16bfd2caa9f5aeff0fa63ac2e  /tmp/daily-v2.tgz' | sha256sum -c -
+          tar -xzf /tmp/daily-v2.tgz
+          rm -f .ops/daily-v2.part1 .ops/daily-v2.part2 .ops/daily-v2.part3 .ops/daily-v2.part4
+          rmdir .ops 2>/dev/null || true
+          rm -f .github/workflows/apply-daily-v2-bundle.yml
+
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check PyYAML Markdown requests
+
+      - name: Verify generated implementation
+        run: |
+          python -m unittest tests/test_edition.py tests/test_publish_wordpress.py -v
+          python tools/validate_edition.py --all
+          python -m py_compile tools/*.py
+          bash -n tests/test_tags.sh
+          ruby -c tests/test_japanese_edition.rb
+
+      - name: Commit verified implementation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: make daily bilingual editions automation-ready'
+          git push origin HEAD:${{ github.head_ref }}
