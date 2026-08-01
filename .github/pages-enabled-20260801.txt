@@ -1,0 +1,1 @@
+GitHub Pages source was enabled in repository settings on 2026-08-01 JST. This file triggers a fresh deployment from main.
