@@ -1,0 +1,38 @@
+name: Test tag navigation
+
+on:
+  pull_request:
+    paths:
+      - '_posts/**'
+      - '_includes/**'
+      - '_layouts/**'
+      - 'daily/**'
+      - 'tests/test_tags.sh'
+      - 'tags.md'
+      - 'index.md'
+      - 'assets/main.scss'
+      - '_config.yml'
+      - '.github/workflows/tags-ci.yml'
+
+permissions:
+  contents: read
+  pages: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Read GitHub Pages configuration
+        uses: actions/configure-pages@v5
+
+      - name: Build with GitHub Pages Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Run tag acceptance checks
+        run: SKIP_BUILD=1 bash tests/test_tags.sh

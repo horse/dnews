@@ -1,0 +1,15 @@
+{% assign tag_items = include.tags %}
+{% if tag_items and tag_items != empty %}
+  {% assign tag_count = tag_items | size %}
+  {% assign display_limit = include.limit | default: tag_count %}
+  {% assign remaining = tag_count | minus: display_limit %}
+  <div class="tag-list{% if include.compact %} tag-list--compact{% endif %}">
+    {% if include.label %}<span class="tag-list__label">{{ include.label }}</span>{% endif %}
+    {% for tag in tag_items limit: display_limit %}
+      <a class="tag-pill" href="{{ '/tags/' | relative_url }}#{{ tag | url_encode }}">{{ tag }}</a>
+    {% endfor %}
+    {% if remaining > 0 %}
+      <a class="tag-pill tag-pill--more" href="{{ '/tags/' | relative_url }}">+{{ remaining }} 个</a>
+    {% endif %}
+  </div>
+{% endif %}

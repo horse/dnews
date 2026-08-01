@@ -20,6 +20,7 @@ permalink: /
     <div class="post-meta">{{ post.news_date | date: "%Y年%-m月%-d日" }} · {{ post.categories | join: " / " }}</div>
     <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
     <p>{{ post.excerpt | strip_html | strip_newlines }}</p>
+    {% include tag-list.html tags=post.tags limit=6 compact=true %}
   </article>
 {% endfor %}
 </div>
