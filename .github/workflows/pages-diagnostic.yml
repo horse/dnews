@@ -1,0 +1,30 @@
+name: Diagnose GitHub Pages
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  probe-public-page:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check public Pages endpoint
+        shell: bash
+        run: |
+          set -o pipefail
+          site_url="https://horse.github.io/dnews/"
+          body_file="$(mktemp)"
+          header_file="$(mktemp)"
+          http_code="$(curl --location --silent --show-error --dump-header "$header_file" --output "$body_file" --write-out '%{http_code}' --max-time 30 "$site_url")"
+          echo "HTTP_CODE=$http_code"
+          echo "--- RESPONSE HEADERS ---"
+          cat "$header_file"
+          echo "--- RESPONSE BODY (first 40 lines) ---"
+          sed -n '1,40p' "$body_file"
+
+          test "$http_code" = "200"
+          grep -q '从日本的信息洪流中' "$body_file"
