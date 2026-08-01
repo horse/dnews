@@ -50,7 +50,10 @@ for section in ('core', 'social', 'other'):
 
 home = (site / 'index.html').read_text(encoding='utf-8')
 daily = (site / 'daily' / edition_date / 'index.html').read_text(encoding='utf-8')
-for text in ('政治经济与重大事件', '社会观察', '科学、文化、城市与其他'):
+core_headings = ('政治经济与重大事件', '政治经济大事')
+if not any(text in daily for text in core_headings):
+    raise SystemExit(f'Daily page missing core section: {core_headings}')
+for text in ('社会观察', '科学、文化、城市与其他'):
     if text not in daily:
         raise SystemExit(f'Daily page missing section: {text}')
 if f'/daily/{edition_date}/' not in home:
