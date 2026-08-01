@@ -3,6 +3,7 @@ layout: post
 title: 日本6月工业产出环比增长1.3%，企业预计7月和8月继续扩张
 date: '2026-08-01 09:01:00 +0900'
 news_date: '2026-07-31'
+daily_section: core
 permalink: /news/2026/07/31/japan-industrial-output-june/
 slug: japan-industrial-output-june
 excerpt: 日本6月工业产出环比增长1.3%，高于市场预期的0.7%。经济产业省调查中的制造商预计7月增长1.2%、8月增长4.5%，但地震停产可能使预测面临下修。

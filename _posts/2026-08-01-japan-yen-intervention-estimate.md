@@ -3,6 +3,7 @@ layout: post
 title: 日本疑似动用最高8.2万亿日元买入日元，干预规模接近590亿美元
 date: '2026-08-01 09:06:00 +0900'
 news_date: '2026-07-31'
+daily_section: core
 permalink: /news/2026/07/31/japan-yen-intervention-estimate/
 slug: japan-yen-intervention-estimate
 excerpt: 日本银行资金供求预测显示，最新一轮买入日元、卖出美元的干预规模可能高达8.2万亿日元。正式月度数据尚未覆盖相关日期，因此这一数字仍是市场估算。

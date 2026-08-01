@@ -3,6 +3,7 @@ layout: post
 title: 日本银行维持1%政策利率，首次明确警告基础通胀可能超过目标
 date: '2026-08-01 09:07:00 +0900'
 news_date: '2026-07-31'
+daily_section: core
 permalink: /news/2026/07/31/boj-holds-rate-inflation-risk/
 slug: boj-holds-rate-inflation-risk
 excerpt: 日本银行维持短期政策利率在1%，但在展望报告中首次明确提示基础通胀可能超过2%目标。植田和男表示，从9月会议起将把上行风险置于政策讨论中心。

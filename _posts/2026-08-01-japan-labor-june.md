@@ -3,6 +3,7 @@ layout: post
 title: 日本6月失业率维持2.5%，就业增加与失业人数连续上升并存
 date: '2026-08-01 09:02:00 +0900'
 news_date: '2026-07-31'
+daily_section: core
 permalink: /news/2026/07/31/japan-labor-june/
 slug: japan-labor-june
 excerpt: 日本6月经季节调整的完全失业率维持2.5%。就业人数同比增加17万，但完全失业人数也增加2万，连续第11个月同比上升，劳动力市场并非单向改善。

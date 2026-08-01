@@ -3,6 +3,7 @@ layout: post
 title: 东京7月物价同比上涨2.0%，食品涨价抵消托育费减免影响
 date: '2026-08-01 09:03:00 +0900'
 news_date: '2026-07-31'
+daily_section: core
 permalink: /news/2026/07/31/tokyo-cpi-july/
 slug: tokyo-cpi-july
 excerpt: 东京23区7月消费者物价指数同比上涨2.0%，剔除生鲜食品后上涨1.9%。食品、房租与交通费用继续上升，托育费下降则对指数形成明显拉低。
