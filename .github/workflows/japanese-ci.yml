@@ -1,10 +1,13 @@
-name: Test Japanese original edition
+name: Test Japanese WordPress edition
 
 on:
   pull_request:
     paths:
       - 'japanese/**'
-      - 'tests/test_japanese_edition.rb'
+      - '_posts/**'
+      - 'daily/**'
+      - 'tools/**'
+      - 'tests/**'
       - '_config.yml'
       - '.github/workflows/japanese-ci.yml'
 
@@ -19,8 +22,18 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Validate Japanese manuscripts and WordPress metadata
-        run: ruby tests/test_japanese_edition.rb
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check PyYAML Markdown requests
+
+      - name: Validate bilingual manuscripts and WordPress metadata
+        run: |
+          python -m unittest tests/test_edition.py tests/test_publish_wordpress.py -v
+          python tools/validate_edition.py --all
 
       - name: Read GitHub Pages configuration
         uses: actions/configure-pages@v5
@@ -31,5 +44,5 @@ jobs:
           source: ./
           destination: ./_site
 
-      - name: Confirm Japanese WordPress drafts are excluded from Pages
+      - name: Confirm Japanese WordPress sources are excluded from Pages
         run: test ! -e _site/japanese
