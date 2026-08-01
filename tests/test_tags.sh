@@ -32,26 +32,49 @@ grep -q 'kahaku-human-earth-exhibition' "$tag_page"
 
 ruby <<'RUBY'
 require 'yaml'
+
 counts = Hash.new(0)
 allowed = %w[core social other]
+errors = []
+
 Dir['_posts/*.md'].sort.each do |path|
   text = File.read(path, encoding: 'UTF-8')
   parts = text.split(/^---\s*$\n?/, 3)
-  abort "#{path}: invalid front matter" unless parts.length == 3
-  data = YAML.safe_load(parts[1], aliases: true)
+  if parts.length != 3
+    errors << "#{path}: invalid front matter"
+    next
+  end
+
+  begin
+    data = YAML.safe_load(parts[1], aliases: true)
+  rescue Psych::SyntaxError => error
+    errors << "#{path}: YAML error: #{error.message.lines.first.strip}"
+    next
+  end
+
   tags = Array(data['tags'])
   body = parts[2]
   section = data['daily_section'].to_s
-  abort "#{path}: invalid daily_section #{section.inspect}" unless allowed.include?(section)
-  abort "#{path}: expected 12-25 tags, got #{tags.length}" unless (12..25).cover?(tags.length)
+
+  errors << "#{path}: invalid daily_section #{section.inspect}" unless allowed.include?(section)
+  errors << "#{path}: expected 12-25 tags, got #{tags.length}" unless (12..25).cover?(tags.length)
+
   missing = tags.reject { |tag| body.include?(tag.to_s) }
-  abort "#{path}: tags absent from body: #{missing.join(', ')}" unless missing.empty?
+  errors << "#{path}: tags absent from body: #{missing.join(', ')}" unless missing.empty?
+
   wordpress_tags = Array(data.dig('wordpress', 'tags'))
-  abort "#{path}: wordpress.tags does not match tags" unless wordpress_tags == tags
+  errors << "#{path}: wordpress.tags does not match tags" unless wordpress_tags == tags
+
   counts[section] += 1 if data['news_date'].to_s == '2026-07-31'
 end
+
 expected = {'core' => 8, 'social' => 8, 'other' => 10}
-abort "section counts mismatch: #{counts.inspect}" unless counts == expected
+errors << "section counts mismatch: expected #{expected.inspect}, got #{counts.inspect}" unless counts == expected
+
+unless errors.empty?
+  warn errors.join("\n")
+  exit 1
+end
 RUBY
 
 echo "Expanded daily edition acceptance checks passed."
