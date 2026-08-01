@@ -4,7 +4,14 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
-from publish_wordpress import exact_term_id, make_post_payload, normalize_password, post_lookup_action
+from publish_wordpress import (
+    exact_term_id,
+    index_terms,
+    is_retryable_status,
+    make_post_payload,
+    normalize_password,
+    post_lookup_action,
+)
 
 
 class PublisherTests(unittest.TestCase):
@@ -15,6 +22,16 @@ class PublisherTests(unittest.TestCase):
         terms = [{"id": 1, "name": "日本経済"}, {"id": 2, "name": "日本"}]
         self.assertEqual(exact_term_id(terms, "日本"), 2)
         self.assertIsNone(exact_term_id(terms, "社会"))
+
+    def test_index_terms_builds_exact_name_cache(self):
+        terms = [{"id": 4, "name": "日本"}, {"id": 9, "name": "社会"}]
+        self.assertEqual(index_terms(terms), {"日本": 4, "社会": 9})
+
+    def test_retryable_status_is_limited_to_transient_errors(self):
+        self.assertTrue(is_retryable_status(429))
+        self.assertTrue(is_retryable_status(503))
+        self.assertFalse(is_retryable_status(400))
+        self.assertFalse(is_retryable_status(401))
 
     def test_make_post_payload_maps_wordpress_fields(self):
         data = {
