@@ -12,8 +12,7 @@ on:
       - 'index.md'
       - 'assets/main.scss'
       - '_config.yml'
-      - 'tools/generate_expanded_daily.py'
-      - 'tools/run_expanded_generator.py'
+      - 'tools/**'
       - '.github/workflows/generate-expanded-daily.yml'
       - '.github/workflows/tags-ci.yml'
 
@@ -31,22 +30,31 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: Generate one-time expanded edition
-        if: hashFiles('tools/run_expanded_generator.py') != ''
-        run: python3 tools/run_expanded_generator.py
+      - name: Write and compose expanded edition
+        run: |
+          for script in \
+            tools/write_social_reports.py \
+            tools/write_other_reports_a.py \
+            tools/write_other_reports_b.py \
+            tools/finalize_expanded_daily.py
+          do
+            if [ -f "$script" ]; then
+              python3 "$script"
+            fi
+          done
 
       - name: Commit generated edition to feature branch
-        if: hashFiles('tools/run_expanded_generator.py') == '' && github.actor != 'github-actions[bot]'
+        if: github.actor != 'github-actions[bot]'
         run: |
           if git diff --quiet && git diff --cached --quiet; then
             echo "No generated changes to commit."
-            exit 0
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "feat: generate expanded July 31 daily edition"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "feat: generate expanded July 31 daily edition"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
 
       - name: Read GitHub Pages configuration
         uses: actions/configure-pages@v5
