@@ -1,0 +1,53 @@
+name: WordPress one-shot publisher
+
+on:
+  push:
+    branches:
+      - ops/wordpress-one-shot-20260801
+    paths:
+      - '.publish/request.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wordpress-one-shot-shinkiji
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out one-shot branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install publisher dependencies
+        run: python -m pip install --disable-pip-version-check requests PyYAML Markdown
+
+      - name: Run publisher unit tests
+        run: python -m unittest tests/test_publish_wordpress.py -v
+
+      - name: Publish requested WordPress drafts
+        env:
+          WP_BASE_URL: https://shinkiji.com
+          WP_USERNAME: shinkiji
+          WP_APP_PASSWORD: ${{ secrets.SHINKIJI_WORDPRESS }}
+        run: |
+          test -n "$WP_APP_PASSWORD"
+          python tools/publish_wordpress.py \
+            --request .publish/request.yml \
+            --report wordpress-publish-report.json
+
+      - name: Upload non-secret publication report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wordpress-publish-report
+          path: wordpress-publish-report.json
+          if-no-files-found: ignore
+          retention-days: 7
