@@ -1,7 +1,7 @@
 name: Normalize WordPress publish default
 
 on:
-  push:
+  pull_request_target:
     branches:
       - main
     paths:
@@ -12,12 +12,15 @@ permissions:
 
 jobs:
   normalize:
+    if: >-
+      startsWith(github.event.pull_request.head.ref, 'ops/default-wordpress-publish-') &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - name: Check out main
+      - name: Check out request branch
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - name: Set up Python
@@ -108,7 +111,7 @@ jobs:
           ruby tests/test_japanese_edition.rb
           python -m unittest tests/test_publish_wordpress.py -v
 
-      - name: Commit normalized defaults
+      - name: Commit normalized defaults when changed
         run: |
           if git diff --quiet; then
             echo "Defaults already normalized."
@@ -118,4 +121,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "feat: default Japanese WordPress publishing to public"
-          git push origin HEAD:main
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
