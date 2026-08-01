@@ -1,0 +1,62 @@
+name: Verify expanded daily publication
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/verify-expanded-publication.yml'
+
+permissions:
+  contents: read
+  pages: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Read Pages configuration
+        uses: actions/configure-pages@v5
+
+      - name: Build merged site
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Run repository acceptance checks
+        run: SKIP_BUILD=1 bash tests/test_tags.sh
+
+      - name: Probe published Pages URLs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          check_page() {
+            local url="$1"
+            local expected="$2"
+            local body
+            body="$(mktemp)"
+
+            for attempt in $(seq 1 30); do
+              code="$(curl --location --silent --show-error --output "$body" --write-out '%{http_code}' --max-time 30 "$url" || true)"
+              if [[ "$code" == "200" ]] && grep -q "$expected" "$body"; then
+                echo "PUBLIC_OK url=$url attempt=$attempt code=$code expected=$expected"
+                rm -f "$body"
+                return 0
+              fi
+              echo "waiting url=$url attempt=$attempt code=$code expected=$expected"
+              sleep 10
+            done
+
+            echo "FAILED url=$url expected=$expected"
+            sed -n '1,100p' "$body"
+            rm -f "$body"
+            return 1
+          }
+
+          check_page 'https://horse.github.io/dnews/' '重要的事，也包括一个社会如何生活'
+          check_page 'https://horse.github.io/dnews/daily/2026-07-31/' '26 reports'
+          check_page 'https://horse.github.io/dnews/news/2026/07/31/kumamoto-water-heat-evacuation/' '避难生活进入基础服务恢复阶段'
+          check_page 'https://horse.github.io/dnews/news/2026/07/31/kahaku-human-earth-exhibition/' '把环境研究现场搬进展厅'
