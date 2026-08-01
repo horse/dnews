@@ -67,20 +67,23 @@ jobs:
           assert result['status'] == 'publish', result
           daily_url = result['link']
 
-          with urllib.request.urlopen(daily_url, timeout=30) as response:
+          source = Path('japanese/daily/2026-07-31.md').read_text(encoding='utf-8')
+          expected_urls = sorted(set(re.findall(r'https://shinkiji\.com/[a-z0-9-]+/', source)))
+          expected_urls = [url for url in expected_urls if not url.endswith('/japan-daily-2026-07-31/')]
+          assert len(expected_urls) == 26, (len(expected_urls), expected_urls)
+
+          request = urllib.request.Request(daily_url, headers={'User-Agent': 'dnews-link-check/1.0'})
+          with urllib.request.urlopen(request, timeout=30) as response:
               assert response.status == 200
               html = response.read().decode('utf-8', errors='replace')
 
-          urls = sorted(set(re.findall(r'https://shinkiji\.com/[a-z0-9-]+/', html)))
-          article_urls = [url for url in urls if not url.endswith('/japan-daily-2026-07-31/')]
-          assert len(article_urls) == 26, (len(article_urls), article_urls)
-
-          for url in article_urls:
+          for url in expected_urls:
+              assert url in html, f'Missing link in daily page: {url}'
               request = urllib.request.Request(url, headers={'User-Agent': 'dnews-link-check/1.0'})
               with urllib.request.urlopen(request, timeout=30) as response:
                   assert response.status == 200, (url, response.status)
 
-          print(json.dumps({'daily_url': daily_url, 'linked_articles': len(article_urls)}, ensure_ascii=False))
+          print(json.dumps({'daily_url': daily_url, 'linked_articles': len(expected_urls)}, ensure_ascii=False))
           PY
 
       - name: Upload non-secret report
