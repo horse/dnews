@@ -13,6 +13,7 @@ on:
       - 'assets/main.scss'
       - '_config.yml'
       - 'tools/generate_expanded_daily.py'
+      - 'tools/run_expanded_generator.py'
       - '.github/workflows/generate-expanded-daily.yml'
       - '.github/workflows/tags-ci.yml'
 
@@ -31,11 +32,11 @@ jobs:
           fetch-depth: 0
 
       - name: Generate one-time expanded edition
-        if: hashFiles('tools/generate_expanded_daily.py') != ''
-        run: python3 tools/generate_expanded_daily.py
+        if: hashFiles('tools/run_expanded_generator.py') != ''
+        run: python3 tools/run_expanded_generator.py
 
       - name: Commit generated edition to feature branch
-        if: hashFiles('tools/generate_expanded_daily.py') == '' && github.actor != 'github-actions[bot]'
+        if: hashFiles('tools/run_expanded_generator.py') == '' && github.actor != 'github-actions[bot]'
         run: |
           if git diff --quiet && git diff --cached --quiet; then
             echo "No generated changes to commit."
