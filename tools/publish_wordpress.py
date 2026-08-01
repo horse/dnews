@@ -15,6 +15,15 @@ def normalize_password(value: str) -> str:
     return re.sub(r"\s+", "", value or "")
 
 
+def normalize_status_override(value: Any) -> str | None:
+    if value is None or str(value).strip() == "":
+        return None
+    status = str(value).strip().lower()
+    if status not in {"draft", "publish"}:
+        raise ValueError(f"Unsupported status override: {status}")
+    return status
+
+
 def exact_term_id(terms: list[dict[str, Any]], name: str) -> int | None:
     for term in terms:
         if str(term.get("name", "")) == name:
@@ -44,14 +53,20 @@ def normalize_wp_date(value: Any) -> str | None:
     return text
 
 
-def make_post_payload(data: dict[str, Any], html: str, category_ids: list[int], tag_ids: list[int]) -> dict[str, Any]:
+def make_post_payload(
+    data: dict[str, Any],
+    html: str,
+    category_ids: list[int],
+    tag_ids: list[int],
+    status_override: str | None = None,
+) -> dict[str, Any]:
     wp = data.get("wordpress") or {}
     payload: dict[str, Any] = {
         "title": data["title"],
         "content": html,
         "excerpt": data.get("excerpt", ""),
         "slug": data["slug"],
-        "status": wp.get("status", "draft"),
+        "status": status_override or wp.get("status", "draft"),
         "comment_status": wp.get("comment_status", "closed"),
         "categories": category_ids,
         "tags": tag_ids,
@@ -176,7 +191,7 @@ class WordPressClient:
             self.post_cache = cache
         return self.post_cache
 
-    def upsert(self, data: dict[str, Any], html: str) -> dict[str, Any]:
+    def upsert(self, data: dict[str, Any], html: str, status_override: str | None = None) -> dict[str, Any]:
         wp = data.get("wordpress") or {}
         category_names = list(wp.get("categories") or data.get("categories") or [])
         tag_names = list(wp.get("tags") or data.get("tags") or [])
@@ -186,7 +201,9 @@ class WordPressClient:
         post_cache = self.load_posts()
         slug = str(data["slug"])
         action, post_id = post_lookup_action(post_cache.get(slug, []))
-        payload = make_post_payload(data, html, category_ids, tag_ids)
+        if status_override == "publish" and action == "create":
+            raise RuntimeError(f"Refusing to publish a missing WordPress post: {slug}")
+        payload = make_post_payload(data, html, category_ids, tag_ids, status_override=status_override)
         if action == "create":
             result = self.request("POST", f"{self.api}/posts", json=payload)
         else:
@@ -239,6 +256,7 @@ def main() -> int:
     request_data = yaml.safe_load(Path(args.request).read_text(encoding="utf-8")) or {}
     mode = str(request_data.get("mode", "one"))
     slug = request_data.get("slug")
+    status_override = normalize_status_override(request_data.get("status_override"))
 
     client = WordPressClient(os.environ["WP_BASE_URL"], os.environ["WP_USERNAME"], os.environ["WP_APP_PASSWORD"])
     user = client.verify()
@@ -246,6 +264,7 @@ def main() -> int:
         "site": client.base_url,
         "authenticated_user": {"id": user.get("id"), "name": user.get("name"), "slug": user.get("slug")},
         "mode": mode,
+        "status_override": status_override,
         "count": 0,
         "results": [],
     }
@@ -257,8 +276,8 @@ def main() -> int:
             if data.get("publication_target") != "wordpress":
                 raise ValueError(f"Not a WordPress target: {path}")
             if (data.get("wordpress") or {}).get("status") != "draft":
-                raise ValueError(f"Only draft publication is allowed: {path}")
-            result = client.upsert(data, markdown_to_html(body))
+                raise ValueError(f"Source Markdown must retain draft status: {path}")
+            result = client.upsert(data, markdown_to_html(body), status_override=status_override)
             result["path"] = str(path.relative_to(root))
             report["results"].append(result)
             report["count"] = len(report["results"])
