@@ -1,3 +1,4 @@
+import tempfile
 import unittest
 from pathlib import Path
 import sys
@@ -12,7 +13,44 @@ from publish_wordpress import (
     normalize_password,
     normalize_status_override,
     post_lookup_action,
+    select_paths,
 )
+
+
+def write_minimal(path: Path, date: str, slug: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        f"""---
+story_id: {date}-{slug}
+lang: ja
+editorial_origin: japanese-sources
+translation_status: original
+publication_target: wordpress
+title: {slug}
+date: '{date} 06:00:00 +0900'
+news_date: '{date}'
+daily_section: core
+slug: {slug}
+excerpt: excerpt
+categories: [日本, 社会]
+tags: [a, b, c, d, e, f, g, h, i, j, k, l]
+article_type: 事実
+analysis_angle: 公共性
+importance: 1
+seo_title: {slug}
+meta_description: excerpt
+source_checked_at: '{date}T05:00:00+09:00'
+wordpress:
+  status: publish
+  post_type: post
+  comment_status: closed
+  categories: [日本, 社会]
+  tags: [a, b, c, d, e, f, g, h, i, j, k, l]
+---
+body
+""",
+        encoding="utf-8",
+    )
 
 
 class PublisherTests(unittest.TestCase):
@@ -58,6 +96,10 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(payload["tags"], [20, 21])
         self.assertEqual(payload["date"], "2026-08-01T09:00:00+09:00")
 
+    def test_make_post_payload_defaults_to_publish(self):
+        data = {"title": "見出し", "slug": "sample", "wordpress": {}}
+        self.assertEqual(make_post_payload(data, "<p>x</p>", [], [])["status"], "publish")
+
     def test_make_post_payload_can_explicitly_publish(self):
         data = {
             "title": "見出し",
@@ -65,13 +107,7 @@ class PublisherTests(unittest.TestCase):
             "excerpt": "要約",
             "wordpress": {"status": "draft", "comment_status": "closed"},
         }
-        payload = make_post_payload(
-            data,
-            "<p>本文</p>",
-            [10],
-            [20],
-            status_override="publish",
-        )
+        payload = make_post_payload(data, "<p>本文</p>", [10], [20], status_override="publish")
         self.assertEqual(payload["status"], "publish")
 
     def test_post_lookup_action_is_idempotent(self):
@@ -79,6 +115,16 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(post_lookup_action([{"id": 77}]), ("update", 77))
         with self.assertRaisesRegex(RuntimeError, "multiple posts"):
             post_lookup_action([{"id": 1}, {"id": 2}])
+
+    def test_select_paths_only_returns_requested_edition(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_minimal(root / "japanese/posts/2026-08-01-a.md", "2026-08-01", "a")
+            write_minimal(root / "japanese/posts/2026-08-02-b.md", "2026-08-02", "b")
+            (root / "japanese/daily").mkdir(parents=True)
+            (root / "japanese/daily/2026-08-02.md").write_text("---\nnews_date: '2026-08-02'\n---\ndaily\n")
+            paths = select_paths(root, "all", None, edition_date="2026-08-02")
+            self.assertEqual([path.name for path in paths], ["2026-08-02-b.md", "2026-08-02.md"])
 
 
 if __name__ == "__main__":

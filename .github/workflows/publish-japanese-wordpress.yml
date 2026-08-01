@@ -7,8 +7,13 @@ on:
     paths:
       - 'japanese/posts/**'
       - 'japanese/daily/**'
+      - 'japanese/edition-*.yml'
   workflow_dispatch:
     inputs:
+      edition_date:
+        description: YYYY-MM-DD; empty uses the latest manifest
+        required: false
+        type: string
       mode:
         description: Content set to synchronize
         required: true
@@ -43,8 +48,10 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Check out repository with history
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -54,12 +61,44 @@ jobs:
       - name: Install dependencies
         run: python -m pip install --disable-pip-version-check requests PyYAML Markdown
 
-      - name: Validate Japanese edition and publisher
+      - name: Determine edition dates
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_EDITION_DATE: ${{ inputs.edition_date }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
         run: |
-          ruby tests/test_japanese_edition.rb
-          python -m unittest tests/test_publish_wordpress.py -v
+          python - <<'PY' > edition-dates.txt
+          import os
+          import sys
+          from pathlib import Path
 
-      - name: Synchronize Japanese content
+          root = Path('.').resolve()
+          sys.path.insert(0, str((root / 'tools').resolve()))
+          from edition import git_changed_paths, latest_edition_date, parse_changed_edition_dates
+
+          if os.environ.get('EVENT_NAME') == 'workflow_dispatch':
+              date = (os.environ.get('INPUT_EDITION_DATE') or '').strip() or latest_edition_date(root)
+              dates = [date]
+          else:
+              paths = git_changed_paths(root, os.environ.get('BEFORE_SHA', ''), os.environ['CURRENT_SHA'])
+              dates = parse_changed_edition_dates(root, paths)
+              if not dates:
+                  raise SystemExit(f'No edition date found in changed Japanese files: {paths}')
+          for date in dates:
+              print(date)
+          PY
+          test -s edition-dates.txt
+          cat edition-dates.txt
+
+      - name: Validate every edition before writing WordPress
+        run: |
+          python -m unittest tests/test_edition.py tests/test_publish_wordpress.py -v
+          while IFS= read -r edition_date; do
+            python tools/validate_edition.py --edition-date "$edition_date"
+          done < edition-dates.txt
+
+      - name: Publish only the selected editions
         env:
           WP_BASE_URL: https://shinkiji.com
           WP_USERNAME: shinkiji
@@ -70,77 +109,93 @@ jobs:
           INPUT_STATUS: ${{ inputs.status }}
         run: |
           test -n "$WP_APP_PASSWORD"
-          python - <<'PY'
-          from __future__ import annotations
-
-          import json
+          mkdir -p wordpress-reports
+          final_status="${INPUT_STATUS:-publish}"
+          mode="${INPUT_MODE:-all}"
+          while IFS= read -r edition_date; do
+            EDITION_DATE="$edition_date" MODE="$mode" SLUG="${INPUT_SLUG:-}" STATUS="$final_status" python - <<'PY'
           import os
-          import sys
           from pathlib import Path
+          import yaml
 
-          sys.path.insert(0, str(Path('tools').resolve()))
-          from publish_wordpress import WordPressClient, markdown_to_html, parse_markdown, select_paths
-
-          event_name = os.environ.get('EVENT_NAME', 'push')
-          mode = (os.environ.get('INPUT_MODE') or 'all') if event_name == 'workflow_dispatch' else 'all'
-          slug = (os.environ.get('INPUT_SLUG') or '').strip() or None
-          final_status = (os.environ.get('INPUT_STATUS') or 'publish') if event_name == 'workflow_dispatch' else 'publish'
-          if final_status not in {'publish', 'draft'}:
-              raise ValueError(f'Unsupported final status: {final_status}')
-
-          root = Path('.').resolve()
-          paths = select_paths(root, mode, slug)
-          client = WordPressClient(
-              os.environ['WP_BASE_URL'],
-              os.environ['WP_USERNAME'],
-              os.environ['WP_APP_PASSWORD'],
-          )
-          user = client.verify()
-          results = []
-
-          for path in paths:
-              data, body = parse_markdown(path)
-              if data.get('publication_target') != 'wordpress':
-                  raise ValueError(f'Not a WordPress target: {path}')
-              html = markdown_to_html(body)
-              post_cache = client.load_posts()
-              article_slug = str(data['slug'])
-
-              if final_status == 'publish':
-                  if not post_cache.get(article_slug):
-                      client.upsert(data, html, status_override=None)
-                  result = client.upsert(data, html, status_override='publish')
-              else:
-                  result = client.upsert(data, html, status_override='draft')
-
-              result['path'] = str(path.relative_to(root))
-              results.append(result)
-              print(json.dumps(result, ensure_ascii=False))
-
-          report = {
-              'site': client.base_url,
-              'authenticated_user': {
-                  'id': user.get('id'),
-                  'name': user.get('name'),
-                  'slug': user.get('slug'),
-              },
-              'mode': mode,
-              'final_status': final_status,
-              'count': len(results),
-              'results': results,
+          request = {
+              'edition_date': os.environ['EDITION_DATE'],
+              'mode': os.environ['MODE'],
+              'status_override': os.environ['STATUS'],
           }
-          Path('wordpress-publish-report.json').write_text(
-              json.dumps(report, ensure_ascii=False, indent=2),
+          if os.environ.get('SLUG'):
+              request['slug'] = os.environ['SLUG']
+          Path('wordpress-request.yml').write_text(
+              yaml.safe_dump(request, allow_unicode=True, sort_keys=False),
               encoding='utf-8',
           )
-          assert all(item['status'] == final_status for item in results), report
+          PY
+            python tools/publish_wordpress.py \
+              --request wordpress-request.yml \
+              --report "wordpress-reports/${edition_date}.json"
+          done < edition-dates.txt
+
+      - name: Verify reports and public URLs
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_STATUS: ${{ inputs.status }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.request
+          from pathlib import Path
+          import yaml
+
+          status = (os.environ.get('INPUT_STATUS') or 'publish') if os.environ.get('EVENT_NAME') == 'workflow_dispatch' else 'publish'
+          mode = (os.environ.get('INPUT_MODE') or 'all') if os.environ.get('EVENT_NAME') == 'workflow_dispatch' else 'all'
+          reports = []
+          for path in sorted(Path('wordpress-reports').glob('*.json')):
+              report = json.loads(path.read_text(encoding='utf-8'))
+              expected = {'all': 27, 'posts': 26, 'daily': 1, 'one': 1}[mode]
+              assert report['count'] == expected, (path, report['count'], expected)
+              assert all(item['status'] == status for item in report['results']), report
+              reports.append(report)
+
+              if status != 'publish':
+                  continue
+              for item in report['results']:
+                  url = item['link']
+                  last_error = None
+                  for attempt in range(6):
+                      try:
+                          request = urllib.request.Request(url, headers={'User-Agent': 'dnews-public-check/2.0'})
+                          with urllib.request.urlopen(request, timeout=30) as response:
+                              assert response.status == 200, (url, response.status)
+                          last_error = None
+                          break
+                      except Exception as exc:
+                          last_error = exc
+                          time.sleep(min(2 ** attempt, 10))
+                  if last_error:
+                      raise last_error
+
+              if mode in {'all', 'daily'}:
+                  edition_date = report['edition_date']
+                  manifest = yaml.safe_load(Path(f'japanese/edition-{edition_date}.yml').read_text(encoding='utf-8'))
+                  expected_urls = [f"https://shinkiji.com/{item['slug']}/" for item in manifest['posts']]
+                  daily = next(item for item in report['results'] if item['path'].startswith('japanese/daily/'))
+                  request = urllib.request.Request(daily['link'], headers={'User-Agent': 'dnews-public-check/2.0'})
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      html = response.read().decode('utf-8', errors='replace')
+                  missing = [url for url in expected_urls if url not in html]
+                  assert not missing, missing
+          assert reports, 'No WordPress reports produced'
+          print(json.dumps({'reports': len(reports), 'status': status}, ensure_ascii=False))
           PY
 
-      - name: Upload publication report
+      - name: Upload publication reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: wordpress-publish-report
-          path: wordpress-publish-report.json
+          path: wordpress-reports/*.json
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 14
