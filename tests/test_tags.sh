@@ -21,6 +21,7 @@ fi
 
 python - "$EDITION_DATE" <<'PY'
 from pathlib import Path
+import re
 import sys
 
 edition_date = sys.argv[1]
@@ -60,5 +61,14 @@ if f'/daily/{edition_date}/' not in home:
     raise SystemExit('Homepage does not link to latest daily edition')
 if (site / 'japanese').exists():
     raise SystemExit('Japanese WordPress sources must not be published by GitHub Pages')
+
+styles = (root / 'assets' / 'main.scss').read_text(encoding='utf-8')
+grid_rule = re.search(r'\.daily-list\s*\{(?P<body>.*?)\}', styles, re.DOTALL)
+if not grid_rule or 'display: grid;' not in grid_rule.group('body') or 'grid-template-columns: repeat(2, minmax(0, 1fr));' not in grid_rule.group('body'):
+    raise SystemExit('Core daily section must use the same two-column card-grid visual language as lower modules')
+card_rule = re.search(r'\.daily-list li\s*\{(?P<body>.*?)\}', styles, re.DOTALL)
+if not card_rule or 'border: 1px solid var(--rule);' not in card_rule.group('body') or 'background: var(--card);' not in card_rule.group('body'):
+    raise SystemExit('Core daily items must render as bordered cards')
+
 print(f'Edition acceptance checks passed: {edition_date}')
 PY
