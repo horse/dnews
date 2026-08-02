@@ -7,7 +7,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
 from publish_wordpress import (
     exact_term_id,
-    expected_publication_count,
     index_terms,
     is_retryable_status,
     make_post_payload,
@@ -16,6 +15,7 @@ from publish_wordpress import (
     post_lookup_action,
     select_paths,
 )
+from wordpress_counts import expected_publication_count
 
 
 def write_minimal(path: Path, date: str, slug: str) -> None:
