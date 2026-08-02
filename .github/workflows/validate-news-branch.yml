@@ -1,0 +1,58 @@
+name: Validate news branch
+
+on:
+  push:
+    branches:
+      - 'news/**'
+    paths:
+      - '_posts/**'
+      - 'daily/**'
+      - 'japanese/**'
+      - 'tools/**'
+      - 'tests/**'
+      - '_includes/**'
+      - '_layouts/**'
+      - 'tags.md'
+      - 'index.md'
+      - 'assets/main.scss'
+      - '_config.yml'
+      - '.github/workflows/validate-news-branch.yml'
+
+permissions:
+  contents: read
+  pages: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out news branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install validator dependencies
+        run: python -m pip install --disable-pip-version-check PyYAML Markdown requests
+
+      - name: Run unit tests and validate all editions
+        run: |
+          python -m unittest tests/test_edition.py tests/test_publish_wordpress.py -v
+          python tools/validate_edition.py --all
+
+      - name: Read GitHub Pages configuration
+        uses: actions/configure-pages@v5
+
+      - name: Build with GitHub Pages Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Run rendered-page acceptance checks
+        run: SKIP_BUILD=1 bash tests/test_tags.sh
+
+      - name: Confirm Japanese sources are excluded from Pages
+        run: test ! -e _site/japanese
