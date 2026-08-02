@@ -1,0 +1,193 @@
+schema_version: 3
+edition: '2026-08-02'
+edition_type: morning
+coverage_start: '2026-08-01T06:00:00+09:00'
+coverage_end: '2026-08-02T05:59:59+09:00'
+published_at: 2026-08-02 06:00:00 +0900
+lang: ja
+editorial_origin: japanese-sources
+publication_target: wordpress
+wordpress_default_status: publish
+expected_counts:
+  core: 6
+  social: 8
+  other: 10
+count_ranges:
+  core:
+    min: 6
+    max: 8
+  social:
+    min: 8
+    max: 12
+  other:
+    min: 10
+    max: 15
+posts:
+- story_id: 2026-08-02-kumamoto-water-outage-heat
+  slug: kumamoto-water-outage-heat
+  section: core
+  importance: 1
+  title: 熊本地震後、一時約7万2000戸が断水　猛暑下で給水復旧と避難生活が同時に逼迫
+  excerpt: 熊本地震後の広域断水に猛暑が重なった。給水所と避難所への依存が続き、復旧は幹線管の修理だけでなく、末端漏水、道路、停電の回復にも左右される。
+  path: japanese/posts/2026-08-02-kumamoto-water-outage-heat.md
+- story_id: 2026-08-02-kumamoto-first-weekend-recovery
+  slug: kumamoto-first-weekend-recovery
+  section: core
+  importance: 2
+  title: 熊本地震、発生後初の週末　死者36人、復旧課題は災害ごみ・罹災証明・長期避難へ
+  excerpt: 熊本地震は発生後初の週末を迎え、救助と並行して災害ごみ、罹災証明、孤立集落、長期避難への対応が前面に出た。余震と断層活動への警戒が帰宅・操業再開の判断を難しくしている。
+  path: japanese/posts/2026-08-02-kumamoto-first-weekend-recovery.md
+- story_id: 2026-08-02-tohoku-heavy-rain-level4
+  slug: tohoku-heavy-rain-level4
+  section: core
+  importance: 3
+  title: 東北各地で警戒レベル4の避難情報　大雨で土砂災害と河川氾濫の危険高まる
+  excerpt: 東北地方では8月1日夜、大雨が続き、各地で警戒レベル4の避難情報が出た。道路や河川がさらに悪化する前の移動と、夜間・高齢者・交通困難地域への支援が課題となる。
+  path: japanese/posts/2026-08-02-tohoku-heavy-rain-level4.md
+- story_id: 2026-08-02-uki-aftershock-shindo5
+  slug: uki-aftershock-shindo5
+  section: core
+  importance: 4
+  title: 熊本県宇城市で最大震度5弱　M4.7、津波の心配なし　余震警戒続く
+  excerpt: 8月1日夜、熊本県宇城市で最大震度5弱を観測した。規模はM4.7で津波の心配はない。被災地では損傷建物、ガス、電気、斜面の再点検が必要になる。
+  path: japanese/posts/2026-08-02-uki-aftershock-shindo5.md
+- story_id: 2026-08-02-japan-dangerous-heat-august1
+  slug: japan-dangerous-heat-august1
+  section: core
+  importance: 5
+  title: 全国243地点で猛暑日　浜松・天竜39.7度、東京都心36.5度
+  excerpt: 8月1日は各地で危険な暑さとなり、浜松市天竜で39.7度、全国243地点で35度以上、東京都心で36.5度を観測した。
+  path: japanese/posts/2026-08-02-japan-dangerous-heat-august1.md
+- story_id: 2026-08-02-kumamoto-aeon-explosion-analysis
+  slug: kumamoto-aeon-explosion-analysis
+  section: core
+  importance: 6
+  title: 熊本の商業施設爆発、閉鎖空間とガス滞留を検証　警察は原因を未確定
+  excerpt: 7人が死亡した熊本の商業施設爆発で、閉鎖性の高い空間と長時間のガス・空気混合が被害を拡大した可能性が検討されている。原因はなお捜査中で、確定ではない。
+  path: japanese/posts/2026-08-02-kumamoto-aeon-explosion-analysis.md
+- story_id: 2026-08-02-kumamoto-disaster-related-deaths
+  slug: kumamoto-disaster-related-deaths
+  section: social
+  importance: 101
+  title: 熊本の避難所で医療・介護負担増　「災害関連死」を防ぐ対応が復旧の焦点に
+  excerpt: 熊本地震後、猛暑、断水、睡眠不足、持病管理が重なり、医療チームは災害関連死の防止を重視している。リスクは避難所だけでなく車中泊や損傷住宅にも及ぶ。
+  path: japanese/posts/2026-08-02-kumamoto-disaster-related-deaths.md
+- story_id: 2026-08-02-henoko-capsizing-family-video
+  slug: henoko-capsizing-family-video
+  section: social
+  importance: 102
+  title: 辺野古沖転覆事故、遺族が初会見　当日の映像が安全管理の時系列解明へ
+  excerpt: 沖縄・辺野古沖の転覆事故で遺族が初めて会見し、事故当日の映像を示した。海況判断、救命装備、要員配置、作業指揮、通報の時系列が検証課題となる。
+  path: japanese/posts/2026-08-02-henoko-capsizing-family-video.md
+- story_id: 2026-08-02-kumamoto-91yo-collapse-family
+  slug: kumamoto-91yo-collapse-family
+  section: social
+  importance: 103
+  title: 氷川町、住宅倒壊で91歳女性死亡　遺族証言が高齢者の避難困難を示す
+  excerpt: 熊本県氷川町で91歳の女性が住宅倒壊により亡くなった。遺族の証言は、高齢者が移動、夜間判断、住宅構造、家族介護の制約を同時に受ける実態を示した。
+  path: japanese/posts/2026-08-02-kumamoto-91yo-collapse-family.md
+- story_id: 2026-08-02-kumamoto-babies-fukuda-hospital
+  slug: kumamoto-babies-fukuda-hospital
+  section: social
+  importance: 104
+  title: 熊本地震翌日に13人誕生　福田病院、建物損傷下でも分娩を継続
+  excerpt: 熊本市の福田病院は地震後に建物のひびが確認されるなか分娩を継続し、7月29日に13人、7月28～31日に計41人の新生児が生まれた。
+  path: japanese/posts/2026-08-02-kumamoto-babies-fukuda-hospital.md
+- story_id: 2026-08-02-one-child-second-child-wall
+  slug: one-child-second-child-wall
+  section: social
+  importance: 105
+  title: 子育て世帯の半数超が一人っ子　「第2子の壁」は仕事と家事負担に
+  excerpt: 日本の子育て世帯に関する調査で、半数超が一人っ子世帯だった。収入、住居、就業継続、家事育児分担、心身の余裕が「第2子の壁」として挙がった。
+  path: japanese/posts/2026-08-02-one-child-second-child-wall.md
+- story_id: 2026-08-02-chiba-explosion-gas-smell
+  slug: chiba-explosion-gas-smell
+  section: social
+  importance: 106
+  title: 千葉の爆発、事前にガス臭の情報　警報・換気・通報の時系列を捜査
+  excerpt: 千葉県内の爆発事故で、発生前にガス臭を感じたとの情報が報じられた。漏出源、警報器、換気、避難、消防・ガス会社への通報時刻が検証課題となる。
+  path: japanese/posts/2026-08-02-chiba-explosion-gas-smell.md
+- story_id: 2026-08-02-okayama-missing-two-year-old-cutoff
+  slug: okayama-missing-two-year-old-cutoff
+  section: social
+  importance: 107
+  title: 岡山県の2歳男児、朝刊締め切り時点で行方不明　住宅周辺と移動経路を捜索
+  excerpt: 岡山県で2歳男児が行方不明となったニュースが8月1日の主要面に入った。本紙の8月2日午前5時59分の締め切り時点では捜索中で、その後の情報は本版に含めない。
+  path: japanese/posts/2026-08-02-okayama-missing-two-year-old-cutoff.md
+- story_id: 2026-08-02-kumamoto-community-rescue-wife
+  slug: kumamoto-community-rescue-wife
+  section: social
+  importance: 108
+  title: 熊本被災地で住民が協力し女性を救出　発災直後の近隣支援の役割浮かぶ
+  excerpt: 熊本の被災地で住民が協力して閉じ込められた女性を救出した事例が主要ニュース面で報じられた。近隣の情報と道具は有効だが、二次倒壊やガスの危険への配慮が欠かせない。
+  path: japanese/posts/2026-08-02-kumamoto-community-rescue-wife.md
+- story_id: 2026-08-02-japan-volleyball-usa-semifinal
+  slug: japan-volleyball-usa-semifinal
+  section: other
+  importance: 201
+  title: 男子バレー日本、VNL準決勝で米国に2―3　3位決定戦はスロベニア
+  excerpt: バレーボール男子日本代表はVNL準決勝で米国とフルセットを戦い、2―3で敗れた。3位決定戦ではスロベニアと対戦する。
+  path: japanese/posts/2026-08-02-japan-volleyball-usa-semifinal.md
+- story_id: 2026-08-02-summer-koshien-draw
+  slug: summer-koshien-draw
+  section: other
+  importance: 202
+  title: 夏の甲子園、49校の組み合わせ決定　8月5日開幕
+  excerpt: 第108回全国高校野球選手権大会の組み合わせ抽選が行われ、49校の初戦が決まった。開幕試合は札幌日大高―仙台育英、沖縄尚学は横浜と対戦する。
+  path: japanese/posts/2026-08-02-summer-koshien-draw.md
+- story_id: 2026-08-02-murakami-24th-rookie-record
+  slug: murakami-24th-rookie-record
+  section: other
+  importance: 203
+  title: 村上宗隆、今季24号2ラン　日本選手のメジャー新人最多に並ぶ
+  excerpt: ホワイトソックスの村上宗隆が今季24号2ランを放ち、日本選手のメジャー新人最多記録に並んだ。2安打2打点で6―1の勝利に貢献した。
+  path: japanese/posts/2026-08-02-murakami-24th-rookie-record.md
+- story_id: 2026-08-02-girls-baseball-kobe-koryo-title
+  slug: girls-baseball-kobe-koryo-title
+  section: other
+  importance: 204
+  title: 神戸弘陵、全国高校女子硬式野球で2年ぶり5度目の優勝
+  excerpt: 神戸弘陵が全国高校女子硬式野球選手権の決勝で学法石川を破り、2年ぶり5度目の優勝を果たした。大会には70チームが参加した。
+  path: japanese/posts/2026-08-02-girls-baseball-kobe-koryo-title.md
+- story_id: 2026-08-02-ohtani-24th-dodgers-loss
+  slug: ohtani-24th-dodgers-loss
+  section: other
+  importance: 205
+  title: 大谷翔平、今季24号と複数安打　ドジャースは敗れて連勝止まる
+  excerpt: 大谷翔平は今季24号本塁打を含む複数安打を記録したが、ドジャースは敗れて連勝が止まった。個人成績とチーム結果が分かれた試合となった。
+  path: japanese/posts/2026-08-02-ohtani-24th-dodgers-loss.md
+- story_id: 2026-08-02-aiko-toba-aquarium
+  slug: aiko-toba-aquarium
+  section: other
+  importance: 206
+  title: 愛子さま、鳥羽水族館を訪問　国内唯一のラッコ飼育と保全を視察
+  excerpt: 愛子さまは三重県の鳥羽水族館を訪れ、国内で唯一飼育されているラッコを見学し、飼育と保全の説明を受けた。今後は伊勢地域を訪問する。
+  path: japanese/posts/2026-08-02-aiko-toba-aquarium.md
+- story_id: 2026-08-02-manga-koshien-opens
+  slug: manga-koshien-opens
+  section: other
+  importance: 207
+  title: 「まんが甲子園」開幕　高校生が「○○界隈」をテーマに一枚漫画
+  excerpt: 高校生の漫画大会「まんが甲子園」が開幕した。参加チームは「○○界隈」をテーマに、制限時間内にチームで一枚漫画を制作する。
+  path: japanese/posts/2026-08-02-manga-koshien-opens.md
+- story_id: 2026-08-02-yamada-goro-final-lesson
+  slug: yamada-goro-final-lesson
+  section: other
+  importance: 208
+  title: 山田五郎さん最後の授業を公開　死去5～6日前に収録
+  excerpt: 評論家・山田五郎さんの最後の授業映像が公開された。収録は死去の5～6日前で、「メメント・モリ」などを通じて芸術と死を語った。
+  path: japanese/posts/2026-08-02-yamada-goro-final-lesson.md
+- story_id: 2026-08-02-ensemble-stars-stage-response
+  slug: ensemble-stars-stage-response
+  section: other
+  importance: 209
+  title: 『あんさんぶるスターズ！』舞台、公演継続　音楽担当逮捕で関連部分とクレジット削除
+  excerpt: 『あんさんぶるスターズ！』舞台の制作側は、音楽担当者の逮捕を受けて公演を継続し、関連要素とクレジットを削除すると発表した。
+  path: japanese/posts/2026-08-02-ensemble-stars-stage-response.md
+- story_id: 2026-08-02-nagaoka-fireworks-manners
+  slug: nagaoka-fireworks-manners
+  section: other
+  importance: 210
+  title: 長岡まつり大花火大会、大規模来場へ　場所取り・ごみ・交通マナーを再周知
+  excerpt: 長岡まつり大花火大会の情報が8月1日の主要ニュース面に入った。主催者は場所取り、ごみ、歩行経路、公共交通のルールを改めて周知した。
+  path: japanese/posts/2026-08-02-nagaoka-fireworks-manners.md
