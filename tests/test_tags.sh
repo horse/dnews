@@ -62,3 +62,47 @@ if (site / 'japanese').exists():
     raise SystemExit('Japanese WordPress sources must not be published by GitHub Pages')
 print(f'Edition acceptance checks passed: {edition_date}')
 PY
+
+if [[ "$EDITION_DATE" == "2026-08-02" ]]; then
+  urls=(
+    "https://horse.github.io/dnews/daily/2026-08-02/"
+    "https://shinkiji.com/japan-daily-2026-08-02/"
+    "https://shinkiji.com/kumamoto-water-outage-heat/"
+    "https://shinkiji.com/kumamoto-first-weekend-recovery/"
+    "https://shinkiji.com/tohoku-heavy-rain-level4/"
+    "https://shinkiji.com/uki-aftershock-shindo5/"
+    "https://shinkiji.com/japan-dangerous-heat-august1/"
+    "https://shinkiji.com/kumamoto-aeon-explosion-analysis/"
+    "https://shinkiji.com/kumamoto-disaster-related-deaths/"
+    "https://shinkiji.com/henoko-capsizing-family-video/"
+    "https://shinkiji.com/kumamoto-91yo-collapse-family/"
+    "https://shinkiji.com/kumamoto-babies-fukuda-hospital/"
+    "https://shinkiji.com/one-child-second-child-wall/"
+    "https://shinkiji.com/chiba-explosion-gas-smell/"
+    "https://shinkiji.com/okayama-missing-two-year-old-cutoff/"
+    "https://shinkiji.com/kumamoto-community-rescue-wife/"
+    "https://shinkiji.com/japan-volleyball-usa-semifinal/"
+    "https://shinkiji.com/summer-koshien-draw/"
+    "https://shinkiji.com/murakami-24th-rookie-record/"
+    "https://shinkiji.com/girls-baseball-kobe-koryo-title/"
+    "https://shinkiji.com/ohtani-24th-dodgers-loss/"
+    "https://shinkiji.com/aiko-toba-aquarium/"
+    "https://shinkiji.com/manga-koshien-opens/"
+    "https://shinkiji.com/yamada-goro-final-lesson/"
+    "https://shinkiji.com/ensemble-stars-stage-response/"
+    "https://shinkiji.com/nagaoka-fireworks-manners/"
+  )
+  for url in "${urls[@]}"; do
+    status="$(curl --location --silent --show-error --output /tmp/public-page.html --write-out '%{http_code}' --connect-timeout 15 --max-time 45 --retry 2 --retry-delay 5 "$url")"
+    if [[ "$status" != "200" ]]; then
+      echo "Public URL failed: $status $url" >&2
+      exit 1
+    fi
+    bytes="$(wc -c < /tmp/public-page.html)"
+    if (( bytes < 500 )); then
+      echo "Public URL returned too little content: $bytes bytes $url" >&2
+      exit 1
+    fi
+    echo "Public URL OK: $status $bytes $url"
+  done
+fi
