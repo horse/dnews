@@ -15,6 +15,7 @@ from publish_wordpress import (
     post_lookup_action,
     select_paths,
 )
+from wordpress_counts import expected_publication_count
 
 
 def write_minimal(path: Path, date: str, slug: str) -> None:
@@ -115,6 +116,12 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(post_lookup_action([{"id": 77}]), ("update", 77))
         with self.assertRaisesRegex(RuntimeError, "multiple posts"):
             post_lookup_action([{"id": 1}, {"id": 2}])
+
+    def test_expected_publication_count_uses_manifest_post_count(self):
+        self.assertEqual(expected_publication_count("all", 24), 25)
+        self.assertEqual(expected_publication_count("posts", 24), 24)
+        self.assertEqual(expected_publication_count("daily", 24), 1)
+        self.assertEqual(expected_publication_count("one", 24), 1)
 
     def test_select_paths_only_returns_requested_edition(self):
         with tempfile.TemporaryDirectory() as tmp:

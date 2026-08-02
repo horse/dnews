@@ -144,17 +144,23 @@ jobs:
           python - <<'PY'
           import json
           import os
+          import sys
           import time
           import urllib.request
           from pathlib import Path
           import yaml
+
+          sys.path.insert(0, str((Path('.') / 'tools').resolve()))
+          from wordpress_counts import expected_publication_count
 
           status = (os.environ.get('INPUT_STATUS') or 'publish') if os.environ.get('EVENT_NAME') == 'workflow_dispatch' else 'publish'
           mode = (os.environ.get('INPUT_MODE') or 'all') if os.environ.get('EVENT_NAME') == 'workflow_dispatch' else 'all'
           reports = []
           for path in sorted(Path('wordpress-reports').glob('*.json')):
               report = json.loads(path.read_text(encoding='utf-8'))
-              expected = {'all': 27, 'posts': 26, 'daily': 1, 'one': 1}[mode]
+              edition_date = report['edition_date']
+              manifest = yaml.safe_load(Path(f'japanese/edition-{edition_date}.yml').read_text(encoding='utf-8'))
+              expected = expected_publication_count(mode, len(manifest['posts']))
               assert report['count'] == expected, (path, report['count'], expected)
               assert all(item['status'] == status for item in report['results']), report
               reports.append(report)
@@ -178,8 +184,6 @@ jobs:
                       raise last_error
 
               if mode in {'all', 'daily'}:
-                  edition_date = report['edition_date']
-                  manifest = yaml.safe_load(Path(f'japanese/edition-{edition_date}.yml').read_text(encoding='utf-8'))
                   expected_urls = [f"https://shinkiji.com/{item['slug']}/" for item in manifest['posts']]
                   daily = next(item for item in report['results'] if item['path'].startswith('japanese/daily/'))
                   request = urllib.request.Request(daily['link'], headers={'User-Agent': 'dnews-public-check/2.0'})
