@@ -114,14 +114,20 @@ body {
 
 .daily-list {
   counter-reset: daily-news;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
   list-style: none;
-  margin-left: 0;
 }
 
 .daily-list li {
   counter-increment: daily-news;
-  padding: 1.3rem 0 1.45rem;
-  border-top: 1px solid var(--rule);
+  min-width: 0;
+  padding: 1.35rem 1.45rem;
+  border: 1px solid var(--rule);
+  background: var(--card);
 }
 
 .daily-list li::before {
@@ -133,8 +139,8 @@ body {
 }
 
 .daily-list h2 {
-  margin: 0.3rem 0 0.45rem;
-  font-size: 1.42rem;
+  margin: 0.3rem 0 0.55rem;
+  font-size: 1.32rem;
   line-height: 1.38;
 }
 
@@ -279,7 +285,8 @@ body {
 }
 
 @media (max-width: 720px) {
-  .news-grid {
+  .news-grid,
+  .daily-list {
     grid-template-columns: 1fr;
   }
 
