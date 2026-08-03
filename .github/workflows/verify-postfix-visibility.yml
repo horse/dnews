@@ -1,0 +1,75 @@
+name: Verify post-fix daily visibility
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.head_ref == 'verify/postfix-2026-08-02-03-visibility'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Chinese Pages and Japanese WordPress visibility
+        run: |
+          python - <<'PY'
+          import json
+          import re
+          import urllib.parse
+          import urllib.request
+
+          def fetch(url):
+              request = urllib.request.Request(url, headers={'User-Agent': 'dnews-postfix-check/1.0'})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  body = response.read().decode('utf-8', errors='replace')
+                  assert response.status == 200, (url, response.status)
+                  return body
+
+          urls = {
+              'cn_home': 'https://horse.github.io/dnews/',
+              'cn_archive': 'https://horse.github.io/dnews/archive/',
+              'cn_0802': 'https://horse.github.io/dnews/daily/2026-08-02/',
+              'cn_0803': 'https://horse.github.io/dnews/daily/2026-08-03/',
+              'wp_home': 'https://shinkiji.com/',
+              'wp_0802': 'https://shinkiji.com/japan-daily-2026-08-02/',
+              'wp_0803': 'https://shinkiji.com/japan-daily-2026-08-03/',
+          }
+          bodies = {name: fetch(url) for name, url in urls.items()}
+
+          assert '/dnews/daily/2026-08-02/' in bodies['cn_archive']
+          assert '/dnews/daily/2026-08-03/' in bodies['cn_archive']
+          assert '日本新闻早报｜2026年8月2日' in bodies['cn_0802']
+          assert '日本新闻早报｜2026年8月3日' in bodies['cn_0803']
+          assert '2026年8月3日' in bodies['cn_home']
+          assert '24篇报道' in bodies['cn_home']
+          assert 'japan-daily-2026-08-03' in bodies['wp_home']
+
+          rest = {}
+          for slug in ['japan-daily-2026-08-02', 'japan-daily-2026-08-03']:
+              query = urllib.parse.urlencode({
+                  'slug': slug,
+                  'status': 'publish',
+                  '_fields': 'id,date,slug,status,link,title',
+              })
+              api_url = f'https://shinkiji.com/wp-json/wp/v2/posts?{query}'
+              payload = json.loads(fetch(api_url))
+              assert len(payload) == 1, (slug, payload)
+              assert payload[0]['status'] == 'publish', payload[0]
+              assert payload[0]['slug'] == slug, payload[0]
+              assert payload[0]['link'] == urls['wp_0802' if slug.endswith('08-02') else 'wp_0803'], payload[0]
+              rest[slug] = payload[0]
+
+          print(json.dumps({
+              'status': 'ok',
+              'chinese': {
+                  'homepage': urls['cn_home'],
+                  'archive': urls['cn_archive'],
+                  'daily_0802': urls['cn_0802'],
+                  'daily_0803': urls['cn_0803'],
+              },
+              'wordpress': rest,
+          }, ensure_ascii=False, indent=2))
+          PY
