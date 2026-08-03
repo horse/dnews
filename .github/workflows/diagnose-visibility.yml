@@ -1,0 +1,79 @@
+name: Diagnose 2026-08-02 and 2026-08-03 visibility
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: github.head_ref == 'diagnose/2026-08-02-03-visibility'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check public pages and WordPress REST
+        run: |
+          python - <<'PY'
+          import json
+          import re
+          import urllib.parse
+          import urllib.request
+
+          urls = {
+              'cn_home': 'https://horse.github.io/dnews/',
+              'cn_archive': 'https://horse.github.io/dnews/archive/',
+              'cn_2026_08_02': 'https://horse.github.io/dnews/daily/2026-08-02/',
+              'cn_2026_08_03': 'https://horse.github.io/dnews/daily/2026-08-03/',
+              'wp_home': 'https://shinkiji.com/',
+              'wp_daily_2026_08_02': 'https://shinkiji.com/japan-daily-2026-08-02/',
+              'wp_daily_2026_08_03': 'https://shinkiji.com/japan-daily-2026-08-03/',
+              'wp_article_2026_08_03': 'https://shinkiji.com/us-japan-yen-joint-intervention/',
+          }
+
+          def fetch(url):
+              req = urllib.request.Request(url, headers={'User-Agent': 'dnews-visibility-diagnosis/1.0'})
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as response:
+                      body = response.read().decode('utf-8', errors='replace')
+                      return {'status': response.status, 'final_url': response.geturl(), 'body': body}
+              except urllib.error.HTTPError as exc:
+                  body = exc.read().decode('utf-8', errors='replace')
+                  return {'status': exc.code, 'final_url': exc.geturl(), 'body': body}
+
+          report = {}
+          for name, url in urls.items():
+              result = fetch(url)
+              title_match = re.search(r'<title[^>]*>(.*?)</title>', result['body'], re.I | re.S)
+              title = re.sub(r'\s+', ' ', title_match.group(1)).strip() if title_match else None
+              report[name] = {
+                  'url': url,
+                  'status': result['status'],
+                  'final_url': result['final_url'],
+                  'title': title,
+                  'contains_2026_08_02': ('2026-08-02' in result['body'] or '2026年8月2日' in result['body'] or '2026年8月2日' in result['body']),
+                  'contains_2026_08_03': ('2026-08-03' in result['body'] or '2026年8月3日' in result['body'] or '2026年8月3日' in result['body']),
+                  'contains_daily_0802_slug': 'japan-daily-2026-08-02' in result['body'],
+                  'contains_daily_0803_slug': 'japan-daily-2026-08-03' in result['body'],
+              }
+
+          for slug in ['japan-daily-2026-08-02', 'japan-daily-2026-08-03', 'us-japan-yen-joint-intervention']:
+              api_url = 'https://shinkiji.com/wp-json/wp/v2/posts?' + urllib.parse.urlencode({
+                  'slug': slug,
+                  'status': 'publish',
+                  '_fields': 'id,date,slug,status,link,title',
+              })
+              result = fetch(api_url)
+              try:
+                  payload = json.loads(result['body'])
+              except Exception:
+                  payload = {'raw_prefix': result['body'][:500]}
+              report['rest_' + slug] = {
+                  'url': api_url,
+                  'status': result['status'],
+                  'payload': payload,
+              }
+
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          PY
