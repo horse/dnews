@@ -59,7 +59,8 @@ jobs:
           manifest = yaml.safe_load(Path(f'japanese/edition-{edition}.yml').read_text(encoding='utf-8'))
           report = json.loads(Path('wordpress-report-2026-08-03.json').read_text(encoding='utf-8'))
 
-          assert manifest['counts'] == {'core': 6, 'social': 8, 'other': 10}, manifest['counts']
+          section_counts = manifest['expected_counts']
+          assert section_counts == {'core': 6, 'social': 8, 'other': 10}, section_counts
           assert len(manifest['posts']) == 24, len(manifest['posts'])
           assert report['count'] == 25, report['count']
           assert all(item['status'] == 'publish' for item in report['results']), report
@@ -100,7 +101,7 @@ jobs:
               'japanese_http': 200,
               'japanese_articles_verified': len(expected_urls),
               'wordpress_results': report['count'],
-              'section_counts': manifest['counts'],
+              'section_counts': section_counts,
           }, ensure_ascii=False))
           PY
 
