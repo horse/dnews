@@ -1,0 +1,114 @@
+name: Verify 2026-08-03 public edition
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.head_ref == 'verify/2026-08-03-public'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out verification branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check requests PyYAML Markdown
+
+      - name: Validate edition before publication
+        run: |
+          python -m unittest tests/test_edition.py tests/test_publish_wordpress.py -v
+          python tools/validate_edition.py --edition-date 2026-08-03
+
+      - name: Idempotently synchronize WordPress edition
+        env:
+          WP_BASE_URL: https://shinkiji.com
+          WP_USERNAME: shinkiji
+          WP_APP_PASSWORD: ${{ secrets.shinkiji }}
+        run: |
+          test -n "$WP_APP_PASSWORD"
+          cat > wordpress-request.yml <<'YAML'
+          edition_date: '2026-08-03'
+          mode: all
+          status_override: publish
+          YAML
+          python tools/publish_wordpress.py \
+            --request wordpress-request.yml \
+            --report wordpress-report-2026-08-03.json
+
+      - name: Verify GitHub Pages, WordPress daily and all article URLs
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          import urllib.request
+          from pathlib import Path
+          import yaml
+
+          edition = '2026-08-03'
+          chinese_url = 'https://horse.github.io/dnews/daily/2026-08-03/'
+          manifest = yaml.safe_load(Path(f'japanese/edition-{edition}.yml').read_text(encoding='utf-8'))
+          report = json.loads(Path('wordpress-report-2026-08-03.json').read_text(encoding='utf-8'))
+
+          assert manifest['counts'] == {'core': 6, 'social': 8, 'other': 10}, manifest['counts']
+          assert len(manifest['posts']) == 24, len(manifest['posts'])
+          assert report['count'] == 25, report['count']
+          assert all(item['status'] == 'publish' for item in report['results']), report
+
+          def fetch(url, attempts=10):
+              last_error = None
+              for attempt in range(attempts):
+                  try:
+                      request = urllib.request.Request(url, headers={'User-Agent': 'dnews-public-check/3.0'})
+                      with urllib.request.urlopen(request, timeout=30) as response:
+                          body = response.read().decode('utf-8', errors='replace')
+                          if response.status != 200:
+                              raise RuntimeError(f'{url}: HTTP {response.status}')
+                          return body
+                  except Exception as exc:
+                      last_error = exc
+                      time.sleep(min(2 ** attempt, 10))
+              raise last_error
+
+          chinese_html = fetch(chinese_url)
+          assert '日本新闻早报｜2026年8月3日' in chinese_html, 'Chinese daily title missing'
+          assert '24 reports' in chinese_html, 'Chinese daily count missing'
+
+          for item in report['results']:
+              fetch(item['link'])
+
+          daily = next(item for item in report['results'] if item['path'].startswith('japanese/daily/'))
+          japanese_html = fetch(daily['link'])
+          expected_urls = [f"https://shinkiji.com/{item['slug']}/" for item in manifest['posts']]
+          missing = [url for url in expected_urls if url not in japanese_html]
+          assert not missing, missing
+
+          print(json.dumps({
+              'edition_date': edition,
+              'chinese_daily': chinese_url,
+              'japanese_daily': daily['link'],
+              'chinese_http': 200,
+              'japanese_http': 200,
+              'japanese_articles_verified': len(expected_urls),
+              'wordpress_results': report['count'],
+              'section_counts': manifest['counts'],
+          }, ensure_ascii=False))
+          PY
+
+      - name: Upload WordPress publication report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-2026-08-03-public-report
+          path: wordpress-report-2026-08-03.json
+          if-no-files-found: ignore
+          retention-days: 14
