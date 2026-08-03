@@ -4,6 +4,20 @@ title: 日报归档
 permalink: /archive/
 ---
 
-## 2026年
+{% assign daily_pages = site.pages | where: "edition_type", "morning" | sort: "edition_date" | reverse %}
+{% assign current_year = "" %}
 
-- [7月31日：熊本地震进入产业恢复期，日元干预与货币政策成为全国议程中心]({{ '/daily/2026-07-31/' | relative_url }})
+{% for daily in daily_pages %}
+  {% assign daily_year = daily.edition_date | slice: 0, 4 %}
+  {% if daily_year != current_year %}
+    {% unless forloop.first %}</ul>{% endunless %}
+    <h2>{{ daily_year }}年</h2>
+    <ul class="daily-archive">
+    {% assign current_year = daily_year %}
+  {% endif %}
+  <li>
+    <a href="{{ daily.url | relative_url }}">{{ daily.title }}</a>
+    {% if daily.description %}<br><span>{{ daily.description }}</span>{% endif %}
+  </li>
+  {% if forloop.last %}</ul>{% endif %}
+{% endfor %}
