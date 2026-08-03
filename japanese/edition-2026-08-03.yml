@@ -1,0 +1,193 @@
+schema_version: 3
+edition: '2026-08-03'
+edition_type: morning
+coverage_start: '2026-08-02T06:00:00+09:00'
+coverage_end: '2026-08-03T05:59:59+09:00'
+published_at: 2026-08-03 06:00:00 +0900
+lang: ja
+editorial_origin: japanese-sources
+publication_target: wordpress
+wordpress_default_status: publish
+expected_counts:
+  core: 6
+  social: 8
+  other: 10
+count_ranges:
+  core:
+    min: 6
+    max: 8
+  social:
+    min: 8
+    max: 12
+  other:
+    min: 10
+    max: 15
+posts:
+- story_id: 2026-08-03-us-japan-yen-joint-intervention
+  slug: us-japan-yen-joint-intervention
+  section: core
+  importance: 1
+  title: 日米が円買いで協調介入　無秩序な円安に対応、必要なら追加措置
+  excerpt: 日米両国は、約40年ぶりの安値圏まで下落した円を支えるため、異例の協調円買いを実施した。本版締め切り直後に財務省が正式確認し、必要なら追加介入も辞さない姿勢を示した。
+  path: japanese/posts/2026-08-03-us-japan-yen-joint-intervention.md
+- story_id: 2026-08-03-kumamoto-death-toll-36
+  slug: kumamoto-death-toll-36
+  section: core
+  importance: 2
+  title: 熊本地震の死者36人に　車中避難の熱中症が新たな致命的リスク
+  excerpt: 熊本県は8月2日、地震による死者を36人に引き上げた。70代の女性が燃料切れで冷房を使えない車内で死亡しているのが見つかり、熱中症の疑いがある。
+  path: japanese/posts/2026-08-03-kumamoto-death-toll-36.md
+- story_id: 2026-08-03-kumamoto-water-outage-47000
+  slug: kumamoto-water-outage-47000
+  section: core
+  importance: 3
+  title: 熊本で約4万7000戸の断水続く　停電改善後も水道復旧に時間
+  excerpt: 熊本地震後も約4万7000戸で断水が続く一方、停電は900戸未満まで減った。水道は管路損傷、漏水確認、道路事情、施設の安全点検が必要で、電力より復旧に時間がかかっている。
+  path: japanese/posts/2026-08-03-kumamoto-water-outage-47000.md
+- story_id: 2026-08-03-aeon-mall-search-ended
+  slug: aeon-mall-search-ended
+  section: core
+  importance: 4
+  title: イオンモール熊本の捜索終了　5人救出、7人死亡　爆発原因は捜査中
+  excerpt: 熊本県嘉島町のイオンモール熊本で続いていた捜索は8月1日に終了した。5人が救出され、7人の死亡が確認された。地震後の爆発と床崩落の原因はなお捜査中である。
+  path: japanese/posts/2026-08-03-aeon-mall-search-ended.md
+- story_id: 2026-08-03-nippon-paper-chimney-nine-dead
+  slug: nippon-paper-chimney-nine-dead
+  section: core
+  importance: 5
+  title: 日本製紙八代工場の煙突倒壊で9人死亡　産業施設の耐震と再稼働が焦点
+  excerpt: 熊本地震で日本製紙八代工場の煙突が倒壊し、閉じ込められた11人のうち9人が死亡、2人が救助された。工場設備の耐震性と安全な操業再開が焦点となる。
+  path: japanese/posts/2026-08-03-nippon-paper-chimney-nine-dead.md
+- story_id: 2026-08-03-kumamoto-damage-3800-buildings
+  slug: kumamoto-damage-3800-buildings
+  section: core
+  importance: 6
+  title: 熊本で3800棟超が被害、住宅180戸超が全壊　判定と仮住まいが次の段階
+  excerpt: 熊本県の初期評価では、住宅180戸超が全壊し、3800棟を超える建物に被害が出た。うち20棟は深刻な損傷とされ、応急危険度判定、罹災証明、仮住まいの確保が次の課題となる。
+  path: japanese/posts/2026-08-03-kumamoto-damage-3800-buildings.md
+- story_id: 2026-08-03-car-evacuation-heatstroke-death
+  slug: car-evacuation-heatstroke-death
+  section: social
+  importance: 101
+  title: 車中避難の女性が熱中症疑いで死亡　燃料と冷房が命を左右
+  excerpt: 熊本の被災地で車中避難をしていた70代女性が死亡し、熱中症の疑いがある。車は燃料切れで冷房を使えず、猛暑下の車中泊が独立した致命的危険を持つことが示された。
+  path: japanese/posts/2026-08-03-car-evacuation-heatstroke-death.md
+- story_id: 2026-08-03-kumamoto-shelters-9000-no-ac
+  slug: kumamoto-shelters-9000-no-ac
+  section: social
+  importance: 102
+  title: 熊本で9000人超が避難生活　学校体育館などで冷房不足
+  excerpt: 熊本の被災地では9000人を超える住民が公民館、学校体育館、教室などで避難生活を続け、一部は冷房がない。猛暑、混雑、持病、睡眠不足による健康悪化が懸念される。
+  path: japanese/posts/2026-08-03-kumamoto-shelters-9000-no-ac.md
+- story_id: 2026-08-03-kumamoto-fuel-shortage-gas-lines
+  slug: kumamoto-fuel-shortage-gas-lines
+  section: social
+  importance: 103
+  title: 熊本で燃料不足、給油所に長い列　車中避難と物流を同時に圧迫
+  excerpt: 熊本の被災地では燃料不足が起き、営業を再開した給油所に長い列ができた。燃料は移動だけでなく、車中避難の冷房、救援車両、物資輸送、発電機にも必要である。
+  path: japanese/posts/2026-08-03-kumamoto-fuel-shortage-gas-lines.md
+- story_id: 2026-08-03-kumamoto-relief-supplies-delivery
+  slug: kumamoto-relief-supplies-delivery
+  section: social
+  importance: 104
+  title: 熊本の避難所へ水・食料・仮設トイレ・冷房・間仕切りを追加搬送
+  excerpt: 政府は熊本の避難所へ水、食料、仮設トイレ、冷房機器、間仕切りを追加搬送した。断水、猛暑、衛生、プライバシーを同時に改善し、設置と継続運用が次の課題となる。
+  path: japanese/posts/2026-08-03-kumamoto-relief-supplies-delivery.md
+- story_id: 2026-08-03-kumamoto-power-restoration-water-gap
+  slug: kumamoto-power-restoration-water-gap
+  section: social
+  importance: 105
+  title: 熊本の停電は900戸未満、断水4万7000戸　ライフライン復旧に差
+  excerpt: 熊本の停電は900戸未満まで減った一方、約4万7000戸で断水が続く。電力と水道の復旧速度の差が、衛生、医療、学校、商業の再開に影響している。
+  path: japanese/posts/2026-08-03-kumamoto-power-restoration-water-gap.md
+- story_id: 2026-08-03-kumamoto-missing-search-continues
+  slug: kumamoto-missing-search-continues
+  section: social
+  importance: 106
+  title: イオン捜索終了後も熊本各地で行方不明者の捜索続く
+  excerpt: イオンモール熊本の集中捜索は終了したが、県内の別の被災地では行方不明者の捜索が続く。自衛隊、警察、消防、救助犬が複数の現場で活動している。
+  path: japanese/posts/2026-08-03-kumamoto-missing-search-continues.md
+- story_id: 2026-08-03-kumamoto-vehicle-evacuation-leaflets
+  slug: kumamoto-vehicle-evacuation-leaflets
+  section: social
+  importance: 107
+  title: 熊本、車中避難者に熱中症・血栓予防の注意書きを配布
+  excerpt: 熊本県は車中避難者に、涼しい場所への移動、十分な水分、定期的な運動を求める注意書きを配る。車内で熱中症の疑いにより死亡した女性が確認されたことを受けた措置である。
+  path: japanese/posts/2026-08-03-kumamoto-vehicle-evacuation-leaflets.md
+- story_id: 2026-08-03-kumamoto-shelter-sanitation-privacy
+  slug: kumamoto-shelter-sanitation-privacy
+  section: social
+  importance: 108
+  title: 熊本の避難所で衛生・プライバシー問題　仮設トイレと間仕切りを投入
+  excerpt: 熊本の避難所では、混雑、トイレ不足、プライバシー欠如が健康と心理に負担を与えている。政府は仮設トイレと間仕切りを追加したが、配置、清掃、個別ニーズへの対応が必要である。
+  path: japanese/posts/2026-08-03-kumamoto-shelter-sanitation-privacy.md
+- story_id: 2026-08-03-nagaoka-fireworks-opening-night
+  slug: nagaoka-fireworks-opening-night
+  section: other
+  importance: 201
+  title: 長岡花火初日　復興祈願フェニックス、正三尺玉、尺玉100連発
+  excerpt: 長岡花火は8月2日夜、19時20分の「白菊」で始まり、20時45分に復興祈願花火「フェニックス2026」、正三尺玉、尺玉100連発などを21時25分まで組んだ。
+  path: japanese/posts/2026-08-03-nagaoka-fireworks-opening-night.md
+- story_id: 2026-08-03-baystars-beat-giants-2-1
+  slug: baystars-beat-giants-2-1
+  section: other
+  importance: 202
+  title: DeNAが巨人に2―1　深沢が勝利、レイノルズがセーブ
+  excerpt: DeNAは東京ドームで巨人に2―1で勝った。深沢が勝利投手、レイノルズがセーブ、小笠原が敗戦投手となった。
+  path: japanese/posts/2026-08-03-baystars-beat-giants-2-1.md
+- story_id: 2026-08-03-hanshin-beat-yakult-4-3
+  slug: hanshin-beat-yakult-4-3
+  section: other
+  importance: 203
+  title: 阪神がヤクルトに4―3　及川勝利、工藤が1点差守る
+  excerpt: 阪神は神宮球場でヤクルトに4―3で勝った。及川が勝利投手、工藤がセーブ、木原が敗戦投手となった。
+  path: japanese/posts/2026-08-03-hanshin-beat-yakult-4-3.md
+- story_id: 2026-08-03-hiroshima-beat-chunichi-4-3
+  slug: hiroshima-beat-chunichi-4-3
+  section: other
+  importance: 204
+  title: 広島が中日に4―3　遠藤勝利、森浦がセーブ
+  excerpt: 広島はマツダスタジアムで中日に4―3で勝った。遠藤が勝利投手、森浦がセーブ、吉田が敗戦投手となった。
+  path: japanese/posts/2026-08-03-hiroshima-beat-chunichi-4-3.md
+- story_id: 2026-08-03-fighters-beat-marines-3-0
+  slug: fighters-beat-marines-3-0
+  section: other
+  importance: 205
+  title: 日本ハムがロッテに3―0　有原が勝利投手
+  excerpt: 日本ハムはエスコンフィールドでロッテに3―0で勝った。有原が勝利投手、ジャクソンが敗戦投手となり、この日の6試合で唯一の完封結果だった。
+  path: japanese/posts/2026-08-03-fighters-beat-marines-3-0.md
+- story_id: 2026-08-03-softbank-beat-rakuten-10-6
+  slug: softbank-beat-rakuten-10-6
+  section: other
+  importance: 206
+  title: ソフトバンクが楽天に10―6　この日最多得点の試合
+  excerpt: ソフトバンクは楽天モバイルパークで楽天に10―6で勝った。前田悠が勝利投手、古謝が敗戦投手となり、両軍16得点はこの日の6試合で最多だった。
+  path: japanese/posts/2026-08-03-softbank-beat-rakuten-10-6.md
+- story_id: 2026-08-03-seibu-beat-orix-5-1
+  slug: seibu-beat-orix-5-1
+  section: other
+  importance: 207
+  title: 西武がオリックスに5―1　武内が勝利投手
+  excerpt: 西武はベルーナドームでオリックスに5―1で勝った。武内が勝利投手、高島が敗戦投手となり、西武が4点差で試合を取った。
+  path: japanese/posts/2026-08-03-seibu-beat-orix-5-1.md
+- story_id: 2026-08-03-aomori-nebuta-opening
+  slug: aomori-nebuta-opening
+  section: other
+  importance: 208
+  title: 青森ねぶた祭が8月2日開幕　子どもねぶたと大型ねぶたが夜間運行
+  excerpt: 青森ねぶた祭は8月2日に本会期へ入り、19時から子どもねぶたと約15台の大型ねぶたが運行した。祭りは7日まで続き、最終日は海上運行と花火大会を予定する。
+  path: japanese/posts/2026-08-03-aomori-nebuta-opening.md
+- story_id: 2026-08-03-morioka-sansa-second-day
+  slug: morioka-sansa-second-day
+  section: other
+  importance: 209
+  title: 盛岡さんさ踊り2日目　中央通の太鼓パレードと伝統芸能競演
+  excerpt: 第49回盛岡さんさ踊りは8月2日に2日目を迎え、中央通で18時から21時までパレードと輪踊りを実施した。昼は伝統さんさ踊り競演会も組まれ、4日まで続く。
+  path: japanese/posts/2026-08-03-morioka-sansa-second-day.md
+- story_id: 2026-08-03-hachinohe-sansha-nakabi
+  slug: hachinohe-sansha-nakabi
+  section: other
+  importance: 210
+  title: 八戸三社大祭「中日」　騎馬打毬と夜間山車運行
+  excerpt: 八戸三社大祭は8月2日に「中日」を迎え、昼に加賀美流騎馬打毬と徒打毬、18時から21時にライトアップした山車の夜間運行を行い、審査発表と表彰も組んだ。
+  path: japanese/posts/2026-08-03-hachinohe-sansha-nakabi.md
