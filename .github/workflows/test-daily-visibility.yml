@@ -1,0 +1,38 @@
+name: Test daily visibility regression
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: read
+
+jobs:
+  test:
+    if: github.head_ref == 'fix/daily-visibility'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+          future: false
+      - name: Assert latest daily visibility
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          home = Path('_site/index.html').read_text(encoding='utf-8')
+          archive = Path('_site/archive/index.html').read_text(encoding='utf-8')
+
+          assert '2026年8月3日' in home, 'latest edition date missing from homepage'
+          assert '24篇报道' in home, 'homepage must show actual latest edition count'
+          assert '26篇报道' not in home, 'stale hard-coded count remains on homepage'
+          assert '/dnews/daily/2026-08-03/' in archive, '2026-08-03 missing from daily archive'
+          assert '/dnews/daily/2026-08-02/' in archive, '2026-08-02 missing from daily archive'
+          assert '/dnews/daily/2026-07-31/' in archive, 'existing 2026-07-31 archive entry must remain'
+          PY
